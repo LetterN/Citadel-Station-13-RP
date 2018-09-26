@@ -68,10 +68,10 @@
 
 	output += "</div>"
 
-	panel = new(src, "Welcome","Welcome", 210, 280, src)
-	panel.set_window_options("can_close=0")
-	panel.set_content(output)
-	panel.open()
+	var/datum/browser/popup = new(src, "Welcome","Welcome", 210, 280, src)
+	popup.set_window_options("can_close=0")
+	popup.set_content(output)
+	popup.open()
 	return
 
 /mob/new_player/Stat()
