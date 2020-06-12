@@ -50,3 +50,14 @@ GLOBAL_LIST_INIT(bitflags, list(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 204
 #define PASSGRILLE				(1<<2)
 #define PASSBLOB				(1<<3)
 #define PASSMOB					(1<<4)
+
+//tesla_zap
+#define ZAP_MACHINE_EXPLOSIVE		(1<<0)
+#define ZAP_ALLOW_DUPLICATES		(1<<1)
+#define ZAP_OBJ_DAMAGE			(1<<2)
+#define ZAP_MOB_DAMAGE			(1<<3)
+#define ZAP_MOB_STUN			(1<<4)
+
+#define ZAP_DEFAULT_FLAGS ALL
+#define ZAP_FUSION_FLAGS ZAP_OBJ_DAMAGE | ZAP_MOB_DAMAGE | ZAP_MOB_STUN
+#define ZAP_SUPERMATTER_FLAGS NONE

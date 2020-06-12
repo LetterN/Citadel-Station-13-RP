@@ -1,9 +1,10 @@
 //like orange but only checks north/south/east/west for one step
-proc/cardinalrange(var/center)
+/proc/cardinalrange(center)
 	var/list/things = list()
-	for(var/direction in cardinal)
+	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(center, direction)
-		if(!T) continue
+		if(!T) 
+			continue
 		things += T.contents
 	return things
 
@@ -13,9 +14,9 @@ proc/cardinalrange(var/center)
 
 	icon = 'icons/obj/machines/antimatter.dmi'
 	icon_state = "shield"
-	anchored = 1
-	density = 1
-	dir = 1
+	anchored = TRUE
+	density = TRUE
+	dir = NORTH
 	use_power = USE_POWER_OFF //Living things generally dont use power
 	idle_power_usage = 0
 	active_power_usage = 0
@@ -26,23 +27,20 @@ proc/cardinalrange(var/center)
 	var/efficiency = 1//How many cores this core counts for when doing power processing, phoron in the air and stability could affect this
 
 
-/obj/machinery/am_shielding/New(loc)
-	..(loc)
-	spawn(10)
-		controllerscan()
-	return
+/obj/machinery/am_shielding/Initialize(mapload, newdir)
+	. = ..()
+	controllerscan()
 
-
-/obj/machinery/am_shielding/proc/controllerscan(var/priorscan = 0)
+/obj/machinery/am_shielding/proc/controllerscan(priorscan = 0)
 	//Make sure we are the only one here
 	if(!istype(src.loc, /turf))
 		qdel(src)
 		return
+
 	for(var/obj/machinery/am_shielding/AMS in loc.contents)
-		if(AMS == src) continue
-		spawn(0)
-			qdel(src)
-		return
+		if(AMS == src) 
+			continue
+		CRASH("AM Shielding found another AM sheilding in it's tile!")
 
 	//Search for shielding first
 	for(var/obj/machinery/am_shielding/AMS in cardinalrange(src))
@@ -50,139 +48,134 @@ proc/cardinalrange(var/center)
 			break
 
 	if(!control_unit)//No other guys nearby look for a control unit
-		for(var/direction in cardinal)
 		for(var/obj/machinery/power/am_control_unit/AMC in cardinalrange(src))
 			if(AMC.add_shielding(src))
 				break
 
 	if(!control_unit)
 		if(!priorscan)
-			spawn(20)
-				controllerscan(1)//Last chance
+			addtimer(CALLBACK(src, .proc/controllerscan, TRUE), 20)
 			return
-		spawn(0)
-			qdel(src)
+		qdel(src)
 	return
 
 
 /obj/machinery/am_shielding/Destroy()
-	if(control_unit)	control_unit.remove_shielding(src)
-	if(processing)	shutdown_core()
+	if(control_unit)
+		control_unit.remove_shielding(src)
+	if(processing)
+		shutdown_core()
 	visible_message("<font color='red'>The [src.name] melts!</font>")
 	//Might want to have it leave a mess on the floor but no sprites for now
-	..()
-	return
-
+	return ..()
 
 /obj/machinery/am_shielding/CanAllowThrough(atom/movable/mover, turf/target)
 	return FALSE
 
 
 /obj/machinery/am_shielding/process()
-	if(!processing) . = PROCESS_KILL
+	if(!processing) 
+		. = PROCESS_KILL
 	//TODO: core functions and stability
 	//TODO: think about checking the airmix for phoron and increasing power output
 	return
 
-
 /obj/machinery/am_shielding/emp_act()//Immune due to not really much in the way of electronics.
 	return 0
 
-
 /obj/machinery/am_shielding/ex_act(severity)
 	switch(severity)
-		if(1.0)
+		if(1)
 			stability -= 80
-		if(2.0)
+		if(2)
 			stability -= 40
-		if(3.0)
+		if(3)
 			stability -= 20
 	check_stability()
 	return
 
-
-/obj/machinery/am_shielding/bullet_act(var/obj/item/projectile/Proj)
+/obj/machinery/am_shielding/bullet_act(obj/item/projectile/Proj)
 	if(Proj.check_armour != "bullet")
 		stability -= Proj.force/2
 	return 0
-
 
 /obj/machinery/am_shielding/update_icon()
 	overlays.Cut()
 	for(var/direction in alldirs)
 		var/machine = locate(/obj/machinery, get_step(loc, direction))
-		if((istype(machine, /obj/machinery/am_shielding) && machine:control_unit == control_unit)||(istype(machine, /obj/machinery/power/am_control_unit) && machine == control_unit))
+		if((istype(machine, /obj/machinery/am_shielding) && machine.control_unit == control_unit) || (istype(machine, /obj/machinery/power/am_control_unit) && machine == control_unit))
 			overlays += "shield_[direction]"
 
 	if(core_check())
 		overlays += "core"
-		if(!processing) setup_core()
-	else if(processing) shutdown_core()
-
+		if(!processing) 
+			setup_core()
+	else if(processing)
+		shutdown_core()
 
 /obj/machinery/am_shielding/attackby(obj/item/W, mob/user)
-	if(!istype(W) || !user) return
+	if(!user) 
+		return
 	if(W.force > 10)
-		stability -= W.force/2
+		stability -= W.force / 2
 		check_stability()
-	..()
-	return
 
+	return ..()
 
-
-//Call this to link a detected shilding unit to the controller
-/obj/machinery/am_shielding/proc/link_control(var/obj/machinery/power/am_control_unit/AMC)
-	if(!istype(AMC))	return 0
-	if(control_unit && control_unit != AMC) return 0//Already have one
+/// Call this to link a detected shilding unit to the controller
+/obj/machinery/am_shielding/proc/link_control(obj/machinery/power/am_control_unit/AMC)
+	if(!istype(AMC))
+		return FALSE
+	if(control_unit && control_unit != AMC) 
+		return FALSE //Already have one
 	control_unit = AMC
 	control_unit.add_shielding(src,1)
-	return 1
+	return TRUE
 
-
-//Scans cards for shields or the control unit and if all there it
+/// Scans cards for shields or the control unit and if all there it
 /obj/machinery/am_shielding/proc/core_check()
 	for(var/direction in alldirs)
 		var/machine = locate(/obj/machinery, get_step(loc, direction))
-		if(!machine) return 0//Need all for a core
-		if(!istype(machine, /obj/machinery/am_shielding) && !istype(machine, /obj/machinery/power/am_control_unit))	return 0
-	return 1
-
+		if(!machine) 
+			return FALSE//Need all for a core
+		if(!istype(machine, /obj/machinery/am_shielding) && !istype(machine, /obj/machinery/power/am_control_unit))	
+			return FALSE
+	return TRUE
 
 /obj/machinery/am_shielding/proc/setup_core()
 	processing = 1
 	START_MACHINE_PROCESSING(src)
-	if(!control_unit)	return
+	if(!control_unit)
+		return
 	control_unit.linked_cores.Add(src)
 	control_unit.reported_core_efficiency += efficiency
 	return
 
-
 /obj/machinery/am_shielding/proc/shutdown_core()
 	processing = 0
-	if(!control_unit)	return
+	if(!control_unit)
+		return
 	control_unit.linked_cores.Remove(src)
 	control_unit.reported_core_efficiency -= efficiency
 	return
 
-
-/obj/machinery/am_shielding/proc/check_stability(var/injecting_fuel = 0)
-	if(stability > 0) return
+/obj/machinery/am_shielding/proc/check_stability(injecting_fuel = FALSE)
+	if(stability > 0)
+		return
 	if(injecting_fuel && control_unit)
-		control_unit.exploding = 1
+		control_unit.exploding = TRUE
 	if(src)
 		qdel(src)
 	return
 
-
-/obj/machinery/am_shielding/proc/recalc_efficiency(var/new_efficiency)//tbh still not 100% sure how I want to deal with efficiency so this is likely temp
-	if(!control_unit || !processing) return
+/obj/machinery/am_shielding/proc/recalc_efficiency(new_efficiency)//tbh still not 100% sure how I want to deal with efficiency so this is likely temp
+	if(!control_unit || !processing)
+		return
 	if(stability < 50)
 		new_efficiency /= 2
 	control_unit.reported_core_efficiency += (new_efficiency - efficiency)
 	efficiency = new_efficiency
 	return
-
-
 
 /obj/item/am_shielding_container
 	name = "packaged antimatter reactor section"
@@ -196,8 +189,8 @@ proc/cardinalrange(var/center)
 	throw_range = 2
 	matter = list(DEFAULT_WALL_MATERIAL = 100, "waste" = 2000)
 
-/obj/item/am_shielding_container/attackby(var/obj/item/I, var/mob/user)
-	if(istype(I, /obj/item/multitool) && istype(src.loc,/turf))
+/obj/item/am_shielding_container/attackby(obj/item/I, mob/user)
+	if(istype(I, /obj/item/multitool) && istype(src.loc, /turf))
 		new/obj/machinery/am_shielding(src.loc)
 		qdel(src)
 		return

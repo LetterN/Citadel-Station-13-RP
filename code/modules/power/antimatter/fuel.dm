@@ -41,8 +41,7 @@
 			qdel(src)
 			F:annihilation(F.fuel)
 
-/obj/item/fuel/antiH/proc/annihilation(var/mass)
-
+/obj/item/fuel/antiH/proc/annihilation(mass)
 	var/strength = convert2energy(mass)
 
 	if (strength < 773.0)
@@ -71,7 +70,7 @@
 	if(get_dist(src, user) <= 1)
 		to_chat(user, "A magnetic storage ring, it contains [fuel]kg of [content ? content : "nothing"].")
 
-/obj/item/fuel/proc/injest(mob/M as mob)
+/obj/item/fuel/proc/injest(mob/M)
 	switch(content)
 		if("Anti-Hydrogen")
 			M.gib() //Yikes!
@@ -80,9 +79,9 @@
 	qdel(src)
 	return
 
-/obj/item/fuel/attack(mob/M as mob, mob/user as mob)
-	if (user != M)
-		var/obj/effect/equip_e/human/O = new /obj/effect/equip_e/human(  )
+/obj/item/fuel/attack(mob/M, mob/user)
+	if(user != M)
+		var/obj/effect/equip_e/human/O = new /obj/effect/equip_e/human()
 		O.source = user
 		O.target = M
 		O.item = src
@@ -90,9 +89,8 @@
 		O.t_loc = M.loc
 		O.place = "fuel"
 		M.requests += O
-		spawn( 0 )
-			O.process()
-			return
+		O.process()
+		return
 	else
 		for(var/mob/O in viewers(M, null))
 			O.show_message(text("<font color='red'>[M] ate the [content ? content : "empty canister"]!</font>"), 1)
