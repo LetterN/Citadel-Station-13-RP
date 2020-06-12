@@ -28,40 +28,38 @@
 
 //injector
 
-/obj/machinery/power/am_engine/injector/New()
-	..()
-	spawn( 13 )
-		var/loc = get_step(src, NORTH)
-		src.connected = locate(/obj/machinery/power/am_engine/engine, get_step(loc, NORTH))
+/obj/machinery/power/am_engine/injector/Initialize()
+	. = ..()
+
+	var/loc = get_step(src, NORTH)
+	src.connected = locate(/obj/machinery/power/am_engine/engine, get_step(loc, NORTH))
+
+/obj/machinery/power/am_engine/injector/attackby(obj/item/I, mob/user)
+	if((stat & BROKEN) || !connected)
 		return
-	return
 
-
-/obj/machinery/power/am_engine/injector/attackby(obj/item/fuel/F, mob/user)
-	if( (stat & BROKEN) || !connected) return
-
-	if(istype(F, /obj/item/fuel/H))
+	if(istype(I, /obj/item/fuel/H)) //WHY DID YOU NAME THIS 'H' NOT 'hydrogen' REE
 		if(injecting)
 			to_chat(user, "Theres already a fuel rod in the injector!")
 			return
 		to_chat(user, "You insert the rod into the injector")
 		injecting = 1
-		var/fuel = F.fuel
-		qdel(F)
-		spawn( 300 )
+		var/fuel = I.fuel
+		qdel(I)
+		spawn(300) //yikes!
 			injecting = 0
-			new/obj/item/fuel(src.loc)
+			new /obj/item/fuel(src.loc)
 			connected.H_fuel += fuel
 
-	if(istype(F, /obj/item/fuel/antiH))
+	if(istype(I, /obj/item/fuel/antiH))
 		if(injecting)
 			to_chat(user, "Theres already a fuel rod in the injector!")
 			return
 		to_chat(user, "You insert the rod into the injector")
 		injecting = 1
-		var/fuel = F.fuel
-		qdel(F)
-		spawn( 300 )
+		var/fuel = I.fuel
+		qdel(I)
+		spawn(300)
 			injecting = 0
 			new /obj/item/fuel(src.loc)
 			connected.antiH_fuel += fuel
@@ -70,20 +68,13 @@
 
 
 //engine
-
-
-/obj/machinery/power/am_engine/engine/New()
-	..()
-	spawn( 7 )
-		var/loc = get_step(src, SOUTH)
-		src.connected = locate(/obj/machinery/power/am_engine/injector, get_step(loc, SOUTH))
-		return
-	return
-
+/obj/machinery/power/am_engine/engine/Initialize()
+	. = ..()
+	var/loc = get_step(src, SOUTH)
+	src.connected = locate(/obj/machinery/power/am_engine/injector, get_step(loc, SOUTH))
 
 /obj/machinery/power/am_engine/engine/proc/engine_go()
-
-	if( (!src.connected) || (stat & BROKEN) )
+	if((!src.connected) || (stat & BROKEN))
 		return
 
 	if(!antiH_fuel || !H_fuel)
@@ -113,7 +104,7 @@
 
 	//Q = k x (delta T)
 
-	energy = energy*0.75
+	energy = energy * 0.75
 	operating = 0
 
 	//TODO: DEFERRED Heat tile
@@ -122,7 +113,6 @@
 
 
 /obj/machinery/power/am_engine/engine/proc/engine_process()
-
 	do
 		if( (!src.connected) || (stat & BROKEN) )
 			return
@@ -170,8 +160,8 @@
 
 			H_fuel -= H
 			antiH_fuel -= antiH
-			antiH_fuel = antiH_fuel/2
-			H_fuel = H_fuel/2
+			antiH_fuel = antiH_fuel / 2
+			H_fuel = H_fuel / 2
 
 			energy = convert2energy(H_fuel + antiH_fuel)
 
@@ -180,17 +170,16 @@
 
 			if(energy > convert2energy(8e-12))	//FAR TOO MUCH ENERGY STILL
 				for(var/mob/M in hearers(src, null))
-					M.show_message(text("<font color='red'><big>BANG!</big></font>"))
+					M.show_message("<font color='red'><big>BANG!</big></font>")
 				new /obj/effect/bhole(src.loc)
 
 		else	//this amount of energy is okay so it does the proper output thing
-
 			sleep(60)
 			//E = Pt
 			//Lets say its 86% efficient
 			var/output = 0.86*energy/20
 			add_avail(output)
-	//yeah the machine realises that something isn't right and accounts for it if H or antiH
+			//yeah the machine realises that something isn't right and accounts for it if H or antiH
 			H_fuel -= H
 			antiH_fuel -= antiH
 			antiH_fuel = antiH_fuel/4
