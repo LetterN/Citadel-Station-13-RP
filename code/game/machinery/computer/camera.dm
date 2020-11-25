@@ -230,7 +230,7 @@
 	radio = new(src)
 	radio.listening = TRUE
 	radio.broadcasting = FALSE
-	radio.set_frequency(ENT_FREQ)
+	radio.set_frequency(FREQ_ENTERTAIN)
 	radio.canhear_range = 7 // Same as default sight range.
 	power_change()
 

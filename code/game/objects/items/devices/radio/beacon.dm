@@ -8,13 +8,12 @@
 
 GLOBAL_LIST_BOILERPLATE(all_beacons, /obj/item/radio/beacon)
 
-/obj/item/radio/beacon/hear_talk()
-	return
+/obj/item/radio/beacon/Hear(message, atom/movable/speaker, message_language, raw_message, radio_freq, list/spans, message_mode, atom/movable/source)
+	return ..()
 
 
-/obj/item/radio/beacon/send_hear()
+/obj/item/radio/beacon/talk_into(atom/movable/M, message, channel, list/spans, datum/language/language)
 	return null
-
 
 /obj/item/radio/beacon/verb/alter_signal(t as text)
 	set name = "Alter Beacon's Signal"
@@ -29,11 +28,8 @@ GLOBAL_LIST_BOILERPLATE(all_beacons, /obj/item/radio/beacon)
 	return
 
 
-/obj/item/radio/beacon/bacon //Probably a better way of doing this, I'm lazy.
-	proc/digest_delay()
-		spawn(600)
-			qdel(src)
-
+/obj/item/radio/beacon/bacon/proc/digest_delay()
+	QDEL_IN(src, 600)
 
 // SINGULO BEACON SPAWNER
 

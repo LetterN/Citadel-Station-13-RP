@@ -33,10 +33,10 @@
 	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = radio_controller.add_object(src, frequency, RADIO_ATMOSIA)
+		radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
 
 /obj/machinery/atmospherics/trinary/atmos_filter/New()
 	..()
@@ -58,8 +58,8 @@
 	air3.volume = ATMOS_DEFAULT_VOLUME_FILTER
 
 /obj/machinery/atmospherics/trinary/atmos_filter/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
+	SSradio.remove_object(src,frequency)
+	return ..()
 
 /obj/machinery/atmospherics/trinary/atmos_filter/update_icon()
 	if(mirrored)

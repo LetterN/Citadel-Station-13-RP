@@ -7,27 +7,38 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 			)
 	item_state = "electropack"
-	frequency = 1449
 	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
 
 	matter = list(DEFAULT_WALL_MATERIAL = 10000,"glass" = 2500)
 
 	var/code = 2
+	frequency = FREQ_ELECTROPACK
+	var/on = TRUE
+	var/shock_cooldown = FALSE
 
-/obj/item/radio/electropack/attack_hand(mob/living/user as mob)
-	if(src == user.back)
-		to_chat(user, "<span class='notice'>You need help taking this off!</span>")
-		return
-	..()
+/obj/item/radio/electropack/Initialize()
+	. = ..()
+	set_frequency(frequency)
 
-/obj/item/radio/electropack/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/obj/item/radio/electropack/Destroy()
+	SSradio.remove_object(src, frequency)
+	return ..()
+
+/obj/item/radio/electropack/attack_hand(mob/user)
+	if(iscarbon(user))
+		var/mob/living/carbon/C = user
+		if(src == C.back)
+			to_chat(user, "<span class='warning'>You need help taking this off!</span>")
+			return
+	return ..()
+
+/obj/item/radio/electropack/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/clothing/head/helmet))
-		if(!b_stat)
+		if(!unscrewed)
 			to_chat(user, "<span class='notice'>[src] is not ready to be attached!</span>")
 			return
-		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
+		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit(user)
 		A.icon = 'icons/obj/assemblies.dmi'
 
 		user.drop_from_inventory(W)
@@ -42,6 +53,8 @@
 
 		user.put_in_hands(A)
 		A.add_fingerprint(user)
+	else
+		return ..()
 
 /obj/item/radio/electropack/Topic(href, href_list)
 	//..()
@@ -82,32 +95,29 @@
 	return
 
 /obj/item/radio/electropack/receive_signal(datum/signal/signal)
-	if(!signal || signal.encryption != code)
+	if(!signal || signal.data["code"] != code)
 		return
 
-	if(ismob(loc) && on)
-		var/mob/M = loc
-		var/turf/T = M.loc
-		if(istype(T, /turf))
-			if(!M.moved_recently && M.last_move)
-				M.moved_recently = 1
-				step(M, M.last_move)
-				sleep(50)
-				if(M)
-					M.moved_recently = 0
+	if(isliving(loc) && on)
+		if(shock_cooldown)
+			return
+		shock_cooldown = TRUE
+		addtimer(VARSET_CALLBACK(src, shock_cooldown, FALSE), 100)
+		var/mob/living/L = loc
+		step(L, pick(cardinals))
+
 		to_chat(M, "<span class='danger'>You feel a sharp shock!</span>")
 		var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
-		s.set_up(3, 1, M)
+		s.set_up(3, 1, L)
 		s.start()
 
-		M.Weaken(10)
+		L.Weaken(10)
 
-	if(master && wires & 1)
+	if(master)
 		master.receive_signal()
 	return
 
-/obj/item/radio/electropack/attack_self(mob/user as mob, flag1)
-
+/obj/item/radio/electropack/attack_self(mob/user, flag1)
 	if(!istype(user, /mob/living/carbon/human))
 		return
 	user.set_machine(src)

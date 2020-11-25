@@ -33,5 +33,5 @@ var/datum/antagonist/deathsquad/mercenary/commandos
 	player.equip_to_slot_or_del(new /obj/item/gun/energy/pulse_rifle(player), slot_r_hand)
 
 	create_id("Commando", player)
-	create_radio(SYND_FREQ, player)
+	create_radio(FREQ_SYNDICATE, player)
 	return 1

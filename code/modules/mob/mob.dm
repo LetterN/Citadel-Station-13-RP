@@ -46,68 +46,163 @@
 		dead_mob_list += src
 	else
 		living_mob_list += src
-	hook_vr("mob_new",list(src)) //VOREStation Code
 	update_transform() // Some mobs may start bigger or smaller than normal.
-	return ..()
+	. = ..()
+	hook_vr("mob_new",list(src))
 
-/mob/proc/show_message(msg, type, alt, alt_type)//Message, type of message (1 or 2), alternative message, alt message type (1 or 2)
+/mob/proc/show_message(msg, type, alt_msg, alt_type)//Message, type of message (1 or 2), alternative message, alt message type (1 or 2)
+	if(audiovisual_redirect)
+		audiovisual_redirect.show_message(msg ? "<avredirspan class='small'>[msg]</avredirspan>" : null, type, alt_msg ? "<avredirspan class='small'>[alt_msg]</avredirspan>" : null, alt_type)
 
-	if(!client && !teleop)	return
+	if(!client)
+		return
 
-	if (type)
-		if((type & 1) && (is_blind() || paralysis) )//Vision related
-			if (!( alt ))
+	msg = copytext_char(msg, 1, MAX_MESSAGE_LEN)
+
+	if(type)
+		if(type & MSG_VISUAL && eye_blind )//Vision related
+			if(!alt_msg)
 				return
 			else
-				msg = alt
+				msg = alt_msg
 				type = alt_type
-		if ((type & 2) && is_deaf())//Hearing related
-			if (!( alt ))
+
+		if(type & MSG_AUDIBLE && !can_hear())//Hearing related
+			if(!alt_msg)
 				return
 			else
-				msg = alt
+				msg = alt_msg
 				type = alt_type
-				if ((type & 1) && (sdisabilities & BLIND))
+				if(type & MSG_VISUAL && eye_blind)
 					return
-	// Added voice muffling for Issue 41.
-	if(stat == UNCONSCIOUS || sleeping > 0)
-		to_chat(src,"<I>... You can almost hear someone talking ...</I>")
-	else
-		to_chat(src,msg)
-		if(teleop)
-			to_chat(teleop, create_text_tag("body", "BODY:", teleop) + "[msg]")
-	return
+	// voice muffling
+	if(stat == UNCONSCIOUS)
+		if(type & MSG_AUDIBLE) //audio
+			to_chat(src, "<I>... You can almost hear something ...</I>")
+		return
+	to_chat(src, msg)
 
-// Show a message to all mobs and objects in sight of this one
-// This would be for visible actions by the src mob
-// message is the message output to anyone who can see e.g. "[src] does something!"
-// self_message (optional) is what the src mob sees  e.g. "You do something!"
-// blind_message (optional) is what blind people will hear e.g. "You hear something!"
-/mob/visible_message(var/message, var/self_message, var/blind_message)
-
-	//VOREStation Edit
-	var/list/see
+/**
+  * Generate a visible message from this atom
+  *
+  * Show a message to all player mobs who sees this atom
+  *
+  * Show a message to the src mob (if the src is a mob)
+  *
+  * Use for atoms performing visible actions
+  *
+  * message is output to anyone who can see, e.g. "The [src] does something!"
+  *
+  * Vars:
+  * * self_message (optional) is what the src mob sees e.g. "You do something!"
+  * * blind_message (optional) is what blind people will hear e.g. "You hear something!"
+  * * vision_distance (optional) define how many tiles away the message can be seen.
+  * * ignored_mobs (optional) doesn't show any message to any given mob in the list.
+  * * target (optional) is the other mob involved with the visible message. For example, the attacker in many combat messages.
+  * * target_message (optional) is what the target mob will see e.g. "[src] does something to you!"
+  */
+/atom/proc/visible_message(message, self_message, blind_message, vision_distance = DEFAULT_MESSAGE_RANGE, ignored_mobs, mob/target, target_message)
+	var/turf/T = get_turf(src)
+	if(!T)
+		return
+	var/list/hearers = list() //get_hearers_in_view(vision_distance, src) //caches the hearers and then removes ignored mobs.
+	var/list/salt = list()
+	/// component this when?
 	if(isbelly(loc))
 		var/obj/belly/B = loc
-		see = B.get_mobs_and_objs_in_belly()
+		salt = B.get_mobs_and_objs_in_belly()
 	else
-		see = get_mobs_and_objs_in_view_fast(get_turf(src),world.view,remote_ghosts = FALSE)
-	//VOREStation Edit End
+		salt = get_mobs_and_objs_in_view_fast(get_turf(src), world.view, remote_ghosts = FALSE) // world.view = 15x15, [vision_distance]x[vision_distance]?
+	hearers = salt["mobs"]
+	if(!length(hearers))
+		return
+	hearers -= ignored_mobs
 
-	var/list/seeing_mobs = see["mobs"]
-	var/list/seeing_objs = see["objs"]
+	if(target_message && target && istype(target) && target.client)
+		hearers -= target
+		//This entire if/else chain could be in two lines but isn't for readibilties sake.
+		var/msg = target_message
+		if(target.see_invisible<invisibility) //if src is invisible to us,
+			msg = blind_message
+		//the light object is dark and not invisible to us, darkness does not matter if you're directly next to the target
+		else if(T.lighting_object && T.lighting_object.invisibility <= target.see_invisible && T.is_softly_lit() && !in_range(T,target))
+			msg = blind_message
+		if(msg)
+			target.show_message(msg, MSG_VISUAL,blind_message, MSG_AUDIBLE)
+	if(self_message)
+		hearers -= src
+	for(var/mob/M in hearers)
+		if(!M.client)
+			continue
+		//This entire if/else chain could be in two lines but isn't for readibilties sake.
+		var/msg = message
+		//CITADEL EDIT, required for vore code to remove (T != loc && T != src)) as a check
+		if(M.see_invisible >= invisibility && MOB_CAN_SEE_PLANE(M, plane)) //if src is invisible to us,
+			msg = blind_message
+		else if(T.lighting_object && T.lighting_object.invisibility <= M.see_invisible && T.is_softly_lit() && !in_range(T,M)) //the light object is dark and not invisible to us, darkness does not matter if you're directly next to the target
+			msg = blind_message
+		else if(SEND_SIGNAL(M, COMSIG_MOB_GET_VISIBLE_MESSAGE, src, message, vision_distance, ignored_mobs) & COMPONENT_NO_VISIBLE_MESSAGE)
+			msg = blind_message
+		if(!msg)
+			continue
+		M.show_message(msg, MSG_VISUAL,blind_message, MSG_AUDIBLE)
 
-	for(var/obj in seeing_objs)
-		var/obj/O = obj
-		O.show_message(message, 1, blind_message, 2)
-	for(var/mob in seeing_mobs)
-		var/mob/M = mob
-		if(self_message && M == src)
-			M.show_message( self_message, 1, blind_message, 2)
-		else if(M.see_invisible >= invisibility && MOB_CAN_SEE_PLANE(M, plane))
-			M.show_message(message, 1, blind_message, 2)
-		else if(blind_message)
-			M.show_message(blind_message, 2)
+	// for(var/obj in see["objs"])
+	// 	var/obj/O = obj
+	// 	O.show_message(message, 1, blind_message, 2)
+
+///Adds the functionality to self_message.
+/mob/visible_message(message, self_message, blind_message, vision_distance = DEFAULT_MESSAGE_RANGE, list/ignored_mobs, mob/target, target_message)
+	. = ..()
+	if(self_message && target != src)
+		show_message(self_message, MSG_VISUAL, blind_message, MSG_AUDIBLE)
+
+/**
+  * Show a message to all mobs in earshot of this atom
+  *
+  * Use for objects performing audible actions
+  *
+  * vars:
+  * * message is the message output to anyone who can hear.
+  * * deaf_message (optional) is what deaf people will see.
+  * * hearing_distance (optional) is the range, how many tiles away the message can be heard.
+  * * ignored_mobs (optional) doesn't show any message to any given mob in the list.
+  */
+/atom/proc/audible_message(message, deaf_message, hearing_distance = DEFAULT_MESSAGE_RANGE, self_message, ignored_mobs)
+	var/turf/T = get_turf(src)
+	if(!T)
+		return
+	var/list/obj_mob = get_mobs_and_objs_in_view_fast(get_turf(src), world.view, remote_ghosts = FALSE) //get_hearers_in_view(hearing_distance, src)
+	var/list/hearers = obj_mob["mobs"]
+
+	if(!length(hearers))
+		return
+	hearers -= ignored_mobs
+	if(self_message)
+		hearers -= src
+	for(var/mob/M in hearers)
+		M.show_message(message, MSG_AUDIBLE, deaf_message, MSG_VISUAL)
+
+	// for(var/obj in obj_mob["objs"])
+	// 	var/obj/O = obj
+	// 	O.show_message(message, 1, blind_message, 2)
+
+/**
+  * Show a message to all mobs in earshot of this one
+  *
+  * This would be for audible actions by the src mob
+  *
+  * vars:
+  * * message is the message output to anyone who can hear.
+  * * self_message (optional) is what the src mob hears.
+  * * deaf_message (optional) is what deaf people will see.
+  * * hearing_distance (optional) is the range, how many tiles away the message can be heard.
+  * * ignored_mobs (optional) doesn't show any message to any given mob in the list.
+  */
+/mob/audible_message(message, deaf_message, hearing_distance = DEFAULT_MESSAGE_RANGE, self_message, list/ignored_mobs)
+	. = ..()
+	if(self_message)
+		show_message(self_message, MSG_AUDIBLE, deaf_message, MSG_VISUAL)
 
 /**
   * Reset the attached clients perspective (viewpoint)
@@ -116,35 +211,37 @@
   * reset_perspective(thing) set the eye to the thing (if it's equal to current default reset to mob perspective)
   */
 /mob/proc/reset_perspective(atom/A)
-	if(client)
-		if(A)
-			if(ismovable(A))
-				//Set the the thing unless it's us
-				if(A != src)
-					client.perspective = EYE_PERSPECTIVE
-					client.eye = A
-				else
-					client.eye = client.mob
-					client.perspective = MOB_PERSPECTIVE
-			else if(isturf(A))
-				//Set to the turf unless it's our current turf
-				if(A != loc)
-					client.perspective = EYE_PERSPECTIVE
-					client.eye = A
-				else
-					client.eye = client.mob
-					client.perspective = MOB_PERSPECTIVE
+	if(!client)
+		return
+	if(A)
+		if(ismovable(A))
+			//Set the the thing unless it's us
+			if(A != src)
+				client.perspective = EYE_PERSPECTIVE
+				client.eye = A
 			else
-				//Do nothing
-		else
-			//Reset to common defaults: mob if on turf, otherwise current loc
-			if(isturf(loc))
 				client.eye = client.mob
 				client.perspective = MOB_PERSPECTIVE
-			else
+		else if(isturf(A))
+			//Set to the turf unless it's our current turf
+			if(A != loc)
 				client.perspective = EYE_PERSPECTIVE
-				client.eye = loc
-		return 1
+				client.eye = A
+			else
+				client.eye = client.mob
+				client.perspective = MOB_PERSPECTIVE
+		else
+			//Do nothing
+	else
+		//Reset to common defaults: mob if on turf, otherwise current loc
+		if(isturf(loc))
+			client.eye = client.mob
+			client.perspective = MOB_PERSPECTIVE
+		else
+			client.perspective = EYE_PERSPECTIVE
+			client.eye = loc
+	// SEND_SIGNAL(src, COMSIG_MOB_RESET_PERSPECTIVE, A)
+	return TRUE
 
 // Returns an amount of power drawn from the object (-1 if it's not viable).
 // If drain_check is set it will not actually drain power, just return a value.
@@ -152,31 +249,6 @@
 // Not sure where to define this, so it can sit here for the rest of time.
 /atom/proc/drain_power(var/drain_check,var/surge, var/amount = 0)
 	return -1
-
-// Show a message to all mobs and objects in earshot of this one
-// This would be for audible actions by the src mob
-// message is the message output to anyone who can hear.
-// self_message (optional) is what the src mob hears.
-// deaf_message (optional) is what deaf people will see.
-// hearing_distance (optional) is the range, how many tiles away the message can be heard.
-/mob/audible_message(var/message, var/deaf_message, var/hearing_distance, var/self_message)
-
-	var/range = hearing_distance || world.view
-	var/list/hear = get_mobs_and_objs_in_view_fast(get_turf(src),range,remote_ghosts = FALSE)
-
-	var/list/hearing_mobs = hear["mobs"]
-	var/list/hearing_objs = hear["objs"]
-
-	for(var/obj in hearing_objs)
-		var/obj/O = obj
-		O.show_message(message, 2, deaf_message, 1)
-
-	for(var/mob in hearing_mobs)
-		var/mob/M = mob
-		var/msg = message
-		if(self_message && M==src)
-			msg = self_message
-		M.show_message(msg, 2, deaf_message, 1)
 
 /mob/proc/findname(msg)
 	for(var/mob/M in mob_list)
@@ -258,17 +330,28 @@
 /mob/proc/show_inv(mob/user as mob)
 	return
 
-//mob verbs are faster than object verbs. See http://www.byond.com/forum/?post=1326139&page=2#comment8198716 for why this isn't atom/verb/examine()
-/mob/verb/examinate(atom/A as mob|obj|turf in view())
+/**
+  * Examine a mob
+  *
+  * mob verbs are faster than object verbs. See
+  * [this byond forum post](https://secure.byond.com/forum/?post=1326139&page=2#comment8198716)
+  * for why this isn't atom/verb/examine()
+  */
+/mob/verb/examinate(atom/A as mob|obj|turf in view()) //hey @Zandario you told me this was done, but it isn't :salt:
 	set name = "Examine"
 	set category = "IC"
 
-	if((is_blind(src) || usr.stat) && !isobserver(src))
-		to_chat(src, "<span class='notice'>Something is there but you can't see it.</span>")
-		return 1
+	if(isturf(A) && !(sight & SEE_TURFS) && !(A in view(client ? client.view : world.view, src)))
+		// shift-click catcher may issue examinate() calls for out-of-sight turfs
+		return
+
+	if(is_blind(src))
+		to_chat(src, "<span class='warning'>Something is there but you can't see it!</span>")
+		return
 
 	face_atom(A)
 	A.examine(src)
+	// SEND_SIGNAL(src, COMSIG_MOB_EXAMINATE, A)
 
 /mob/verb/pointed(atom/A as mob|obj|turf in view())
 	set name = "Point To"
@@ -415,11 +498,11 @@
 		return 	// Don't set it, no need
 
 /mob/verb/abandon_mob()
-	set name = "Return to Menu"
+	set name = "Respawn"
 	set category = "OOC"
 
 	if(stat != DEAD || !SSticker)
-		to_chat(usr, "<span class='notice'><B>You must be dead to use this!</B></span>")
+		to_chat(usr, "<span class='boldnotice'>You must be dead to use this!</span>")
 		return
 
 	// Final chance to abort "respawning"
@@ -428,7 +511,8 @@
 		if(choice == "No, wait")
 			return
 
-	// Beyond this point, you're going to respawn
+	log_game("[key_name(usr)] used abandon mob.")
+
 	to_chat(usr, config_legacy.respawn_message)
 
 	if(!client)
@@ -439,8 +523,6 @@
 	if(!client)
 		log_game("[usr.key] AM failed due to disconnect.")
 		return
-
-	announce_ghost_joinleave(client, 0)
 
 	var/mob/new_player/M = new /mob/new_player()
 	if(!client)
@@ -612,13 +694,18 @@ GLOBAL_VAR_INIT(exploit_warn_spam_prevention, 0)
 						break
 	return 0
 
-/mob/MouseDrop(mob/M as mob)
-	..()
-	if(M != usr) return
-	if(usr == src) return
-	if(!Adjacent(usr)) return
-	if(usr.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_FORCELYING | INCAPACITATION_KNOCKOUT | INCAPACITATION_RESTRAINED)) return //Incapacitated.
-	if(istype(M,/mob/living/silicon/ai)) return
+/mob/MouseDrop(mob/M)
+	. = ..()
+	if(M != usr)
+		return
+	if(usr == src)
+		return
+	if(!Adjacent(usr))
+		return
+	if(istype(M,/mob/living/silicon/ai))
+		return
+	if(usr.incapacitated(INCAPACITATION_STUNNED | INCAPACITATION_FORCELYING | INCAPACITATION_KNOCKOUT | INCAPACITATION_RESTRAINED))
+		return //Incapacitated.
 	show_inv(usr)
 
 /mob/proc/can_use_hands()

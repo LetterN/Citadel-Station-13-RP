@@ -656,21 +656,25 @@ var/datum/announcement/minor/admin_min_announcer = new
 	set category = "Fun"
 	set name = "Intercom Msg"
 	set desc = "Send an intercom message, like an arrivals announcement."
-	if(!check_rights(0))	return
+	if(!check_rights(0))
+		return
 
-	var/channel = input("Channel for message:","Channel", null) as null|anything in radiochannels
+	var/channelName = input("Channel for message:","Channel", null) as null|anything in GLOB.radiochannels
+	if(!channelName)
+		return
+	var/channel = GLOB.radiochannels[channelName]
 
-	if(channel) //They picked a channel
-		var/sender = input("Name of sender (max 75):", "Announcement", "Announcement Computer") as null|text
+	var/sender = input("Name of sender (max 75):", "Announcement", "Announcement Computer") as null|text
+	if(!sender)
+		return
+	sender = sanitize(sender, 75, extra = 0)
 
-		if(sender) //They put a sender
-			sender = sanitize(sender, 75, extra = 0)
-			var/message = input("Message content (max 500):", "Contents", "This is a test of the announcement system.") as null|message
-
-			if(message) //They put a message
-				message = sanitize(message, 500, extra = 0)
-				global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]") //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
-				log_admin("Intercom: [key_name(usr)] : [sender]:[message]")
+	var/message = input("Message content (max 500):", "Contents", "This is a test of the announcement system.") as null|message
+	if(!message)
+		return
+	message = sanitize(message, 500, extra = 0)
+	global_announcer.autosay("[message]", "[sender]", "[channel == "Common" ? null : channel]") //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
+	log_admin("Intercom: [key_name(usr)] : [sender]:[message]")
 
 	feedback_add_details("admin_verb","IN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -679,12 +683,14 @@ var/datum/announcement/minor/admin_min_announcer = new
 	set name = "Intercom Convo"
 	set desc = "Send an intercom conversation, like several uses of the Intercom Msg verb."
 	set waitfor = FALSE //Why bother? We have some sleeps. You can leave tho!
-	if(!check_rights(0))	return
-
-	var/channel = input("Channel for message:","Channel", null) as null|anything in radiochannels
-
-	if(!channel) //They picked a channel
+	if(!check_rights(0))
 		return
+
+	var/channelName = input("Channel for message:","Channel", null) as null|anything in GLOB.radiochannels
+	if(!channelName)
+		return
+
+	var/channel = GLOB.radiochannels[channelName]
 
 	to_chat(usr,"<span class='notice'><B>Intercom Convo Directions</B><br>Start the conversation with the sender, a pipe (|), and then the message on one line. Then hit enter to \
 		add another line, and type a (whole) number of seconds to pause between that message, and the next message, then repeat the message syntax up to 20 times. For example:<br>\
@@ -704,7 +710,7 @@ var/datum/announcement/minor/admin_min_announcer = new
 		return
 
 	//Split on pipe or \n
-	decomposed = splittext(message,regex("\\||$","m"))
+	decomposed = splittext(message, regex("\\||$","m"))
 	decomposed += "0" //Tack on a final 0 sleep to make 3-per-message evenly
 
 	//Time to find how they screwed up.

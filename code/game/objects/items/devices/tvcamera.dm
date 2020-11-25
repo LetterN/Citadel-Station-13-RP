@@ -34,14 +34,14 @@
 	camera.status = FALSE
 	radio = new(src)
 	radio.listening = FALSE
-	radio.set_frequency(ENT_FREQ)
+	radio.set_frequency(FREQ_ENTERTAIN)
 	radio.icon = src.icon
 	radio.icon_state = src.icon_state
 	update_icon()
 
-/obj/item/tvcamera/hear_talk(mob/living/M, msg, var/verb="says", datum/language/speaking=null)
-	radio.hear_talk(M,msg,verb,speaking)
-	..()
+/obj/item/tvcamera/Hear(message, atom/movable/speaker, message_language, raw_message, radio_freq, list/spans, message_mode, atom/movable/source)
+	. = ..()
+	radio.talk_into(speaker, raw_message, , spans, language=message_language)
 
 /obj/item/tvcamera/attack_self(mob/user)
 	add_fingerprint(user)
@@ -50,7 +50,7 @@
 	dat += "Channel name is: <a href='?src=\ref[src];channel=1'>[channel ? channel : "unidentified broadcast"]</a><br>"
 	dat += "Video streaming is <a href='?src=\ref[src];video=1'>[camera.status ? "on" : "off"]</a><br>"
 	dat += "Mic is <a href='?src=\ref[src];sound=1'>[radio.broadcasting ? "on" : "off"]</a><br>"
-	dat += "Sound is being broadcasted on frequency [format_frequency(radio.frequency)] ([get_frequency_name(radio.frequency)])<br>"
+	dat += "Sound is being broadcasted on frequency [format_frequency(radio.frequency)] ([SSradio.get_frequency_name(radio.frequency)])<br>"
 	var/datum/browser/popup = new(user, "Hovercamera", "Eye Buddy", 300, 390, src)
 	popup.set_content(jointext(dat,null))
 	popup.open()

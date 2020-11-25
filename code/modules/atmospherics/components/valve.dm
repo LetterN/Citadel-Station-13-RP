@@ -228,8 +228,8 @@
 	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/atmospherics/valve/digital/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
+	SSradio.remove_object(src, frequency)
+	return ..()
 
 /obj/machinery/atmospherics/valve/digital/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
@@ -258,10 +258,10 @@
 		icon_state = "valve[open]nopower"
 
 /obj/machinery/atmospherics/valve/digital/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = radio_controller.add_object(src, frequency, RADIO_ATMOSIA)
+		radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
 
 /obj/machinery/atmospherics/valve/digital/Initialize()
 	. = ..()
@@ -270,7 +270,7 @@
 
 /obj/machinery/atmospherics/valve/digital/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id))
-		return 0
+		return
 
 	switch(signal.data["command"])
 		if("valve_open")
@@ -287,7 +287,7 @@
 			else
 				open()
 
-/obj/machinery/atmospherics/valve/attackby(var/obj/item/W as obj, var/mob/user as mob)
+/obj/machinery/atmospherics/valve/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/airlock_electronics) && istype(src, /obj/machinery/atmospherics/valve/digital))
 		if(!src.allowed(user)) // ID check, otherwise you could just wipe the access with any board.
 			to_chat(user, "<span class='warning'>Access denied.</span>")

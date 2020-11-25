@@ -95,7 +95,7 @@
 		id_tag = num2text(uid)
 
 /obj/machinery/atmospherics/unary/vent_pump/Destroy()
-	unregister_radio(src, frequency)
+	SSradio.remove_object(src, frequency)
 	if(initial_loc)
 		initial_loc.air_vent_info -= id_tag
 		initial_loc.air_vent_names -= id_tag
@@ -287,14 +287,19 @@
 
 
 /obj/machinery/atmospherics/unary/vent_pump/atmos_init()
+	//some vents work his own special way
+	radio_filter_in = frequency==FREQ_ATMOS_CONTROL?(RADIO_FROM_AIRALARM):null
+	radio_filter_out = frequency==FREQ_ATMOS_CONTROL?(RADIO_TO_AIRALARM):null
+	if(frequency)
+		set_frequency(frequency)
+	broadcast_status()
 	..()
 
-	//some vents work his own special way
-	radio_filter_in = frequency==1439?(RADIO_FROM_AIRALARM):null
-	radio_filter_out = frequency==1439?(RADIO_TO_AIRALARM):null
+/obj/machinery/atmospherics/unary/vent_pump/proc/set_frequency(new_frequency)
+	SSradio.remove_object(src, frequency)
+	frequency = new_frequency
 	if(frequency)
-		radio_connection = register_radio(src, frequency, frequency, radio_filter_in)
-		src.broadcast_status()
+		radio_connection = SSradio.add_object(src, frequency,radio_filter_in)
 
 /obj/machinery/atmospherics/unary/vent_pump/receive_signal(datum/signal/signal)
 	if(stat & (NOPOWER|BROKEN))

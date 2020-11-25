@@ -115,97 +115,96 @@ var/prison_shuttle_timeleft = 0
 				prison_break = 0
 
 
-	proc/post_signal(var/command)
-		var/datum/radio_frequency/frequency = radio_controller.return_frequency(1311)
-		if(!frequency) return
-		var/datum/signal/status_signal = new
-		status_signal.source = src
-		status_signal.transmission_method = 1
-		status_signal.data["command"] = command
-		frequency.post_signal(src, status_signal)
+/obj/machinery/computer/prison_shuttle/proc/post_signal(command)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1311)
+	if(!frequency)
 		return
+	var/datum/signal/status_signal = new(list(
+		"command" = command
+	))
+	frequency.post_signal(src, status_signal)
+	return
 
+/obj/machinery/computer/prison_shuttle/proc/prison_process()
+	while(prison_shuttle_time - world.timeofday > 0)
+		var/ticksleft = prison_shuttle_time - world.timeofday
 
-	proc/prison_process()
-		while(prison_shuttle_time - world.timeofday > 0)
-			var/ticksleft = prison_shuttle_time - world.timeofday
+		if(ticksleft > 1e5)
+			prison_shuttle_time = world.timeofday + 10	// midnight rollover
 
-			if(ticksleft > 1e5)
-				prison_shuttle_time = world.timeofday + 10	// midnight rollover
+		prison_shuttle_timeleft = (ticksleft / 10)
+		sleep(5)
+	prison_shuttle_moving_to_station = 0
+	prison_shuttle_moving_to_prison = 0
 
-			prison_shuttle_timeleft = (ticksleft / 10)
-			sleep(5)
-		prison_shuttle_moving_to_station = 0
-		prison_shuttle_moving_to_prison = 0
+	switch(prison_shuttle_at_station)
 
-		switch(prison_shuttle_at_station)
+		if(0)
+			prison_shuttle_at_station = 1
+			if (prison_shuttle_moving_to_station || prison_shuttle_moving_to_prison) return
 
-			if(0)
-				prison_shuttle_at_station = 1
-				if (prison_shuttle_moving_to_station || prison_shuttle_moving_to_prison) return
+			if (!prison_can_move())
+				to_chat(usr, "<span class='warning'>The prison shuttle is unable to leave.</span>")
+				return
 
-				if (!prison_can_move())
-					to_chat(usr, "<span class='warning'>The prison shuttle is unable to leave.</span>")
-					return
+			var/area/start_location = locate(/area/shuttle/prison/prison)
+			var/area/end_location = locate(/area/shuttle/prison/station)
 
-				var/area/start_location = locate(/area/shuttle/prison/prison)
-				var/area/end_location = locate(/area/shuttle/prison/station)
+			var/list/dstturfs = list()
+			var/throwy = world.maxy
 
-				var/list/dstturfs = list()
-				var/throwy = world.maxy
+			for(var/turf/T in end_location)
+				dstturfs += T
+				if(T.y < throwy)
+					throwy = T.y
+						// hey you, get out of the way!
+			for(var/turf/T in dstturfs)
+							// find the turf to move things to
+				var/turf/D = locate(T.x, throwy - 1, 1)
+							//var/turf/E = get_step(D, SOUTH)
+				for(var/atom/movable/AM as mob|obj in T)
+					AM.Move(D)
+				if(istype(T, /turf/simulated))
+					qdel(T)
+			start_location.move_contents_to(end_location)
 
-				for(var/turf/T in end_location)
-					dstturfs += T
-					if(T.y < throwy)
-						throwy = T.y
-							// hey you, get out of the way!
-				for(var/turf/T in dstturfs)
-								// find the turf to move things to
-					var/turf/D = locate(T.x, throwy - 1, 1)
-								//var/turf/E = get_step(D, SOUTH)
-					for(var/atom/movable/AM as mob|obj in T)
-						AM.Move(D)
-					if(istype(T, /turf/simulated))
-						qdel(T)
-				start_location.move_contents_to(end_location)
+		if(1)
+			prison_shuttle_at_station = 0
+			if (prison_shuttle_moving_to_station || prison_shuttle_moving_to_prison) return
 
-			if(1)
-				prison_shuttle_at_station = 0
-				if (prison_shuttle_moving_to_station || prison_shuttle_moving_to_prison) return
+			if (!prison_can_move())
+				to_chat(usr, "<span class='warning'>The prison shuttle is unable to leave.</span>")
+				return
 
-				if (!prison_can_move())
-					to_chat(usr, "<span class='warning'>The prison shuttle is unable to leave.</span>")
-					return
+			var/area/start_location = locate(/area/shuttle/prison/station)
+			var/area/end_location = locate(/area/shuttle/prison/prison)
 
-				var/area/start_location = locate(/area/shuttle/prison/station)
-				var/area/end_location = locate(/area/shuttle/prison/prison)
+			var/list/dstturfs = list()
+			var/throwy = world.maxy
 
-				var/list/dstturfs = list()
-				var/throwy = world.maxy
+			for(var/turf/T in end_location)
+				dstturfs += T
+				if(T.y < throwy)
+					throwy = T.y
 
-				for(var/turf/T in end_location)
-					dstturfs += T
-					if(T.y < throwy)
-						throwy = T.y
+						// hey you, get out of the way!
+			for(var/turf/T in dstturfs)
+							// find the turf to move things to
+				var/turf/D = locate(T.x, throwy - 1, 1)
+							//var/turf/E = get_step(D, SOUTH)
+				for(var/atom/movable/AM as mob|obj in T)
+					AM.Move(D)
+				if(istype(T, /turf/simulated))
+					qdel(T)
 
-							// hey you, get out of the way!
-				for(var/turf/T in dstturfs)
-								// find the turf to move things to
-					var/turf/D = locate(T.x, throwy - 1, 1)
-								//var/turf/E = get_step(D, SOUTH)
-					for(var/atom/movable/AM as mob|obj in T)
-						AM.Move(D)
-					if(istype(T, /turf/simulated))
-						qdel(T)
+			for(var/mob/living/carbon/bug in end_location) // If someone somehow is still in the shuttle's docking area...
+				bug.gib()
 
-				for(var/mob/living/carbon/bug in end_location) // If someone somehow is still in the shuttle's docking area...
-					bug.gib()
+			for(var/mob/living/simple_mob/pest in end_location) // And for the other kind of bug...
+				pest.gib()
 
-				for(var/mob/living/simple_mob/pest in end_location) // And for the other kind of bug...
-					pest.gib()
-
-				start_location.move_contents_to(end_location)
-		return
+			start_location.move_contents_to(end_location)
+	return
 
 /obj/machinery/computer/prison_shuttle/emag_act(var/charges, var/mob/user)
 	if(!hacked)

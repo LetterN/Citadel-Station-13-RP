@@ -61,19 +61,18 @@
 		icon_state = "meter4"
 
 	if(frequency)
-		var/datum/radio_frequency/radio_connection = radio_controller.return_frequency(frequency)
+		var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
 
-		if(!radio_connection) return
+		if(!radio_connection)
+			return
 
-		var/datum/signal/signal = new
-		signal.source = src
-		signal.transmission_method = 1
-		signal.data = list(
+		var/datum/signal/signal = new(list(
+			"id_tag" = id, //id_tag,
 			"tag" = id,
 			"device" = "AM",
 			"pressure" = round(env_pressure),
 			"sigtype" = "status"
-		)
+		))
 		radio_connection.post_signal(src, signal)
 
 /obj/machinery/meter/examine(mob/user)

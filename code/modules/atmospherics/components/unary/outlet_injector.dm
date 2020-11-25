@@ -29,8 +29,8 @@
 	air_contents.volume = ATMOS_DEFAULT_VOLUME_PUMP + 500	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
 
 /obj/machinery/atmospherics/unary/outlet_injector/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
+	SSradio.remove_object(src, frequency)
+	return ..()
 
 /obj/machinery/atmospherics/unary/outlet_injector/update_icon()
 	if(!powered())
@@ -97,10 +97,10 @@
 	flick("inject", src)
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = radio_controller.add_object(src, frequency)
+		radio_connection = SSradio.add_object(src, frequency)
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/broadcast_status()
 	if(!radio_connection)

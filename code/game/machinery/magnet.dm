@@ -14,7 +14,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 50
 
-	var/freq = 1449		// radio frequency
+	var/freq = FREQ_MAGNETS		// radio frequency
 	var/electricity_level = 1 // intensity of the magnetic pull
 	var/magnetic_field = 1 // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
@@ -27,21 +27,23 @@
 	var/center_y = 0
 	var/max_dist = 20 // absolute value of center_x,y cannot exceed this integer
 
-/obj/machinery/magnetic_module/New()
+/obj/machinery/magnetic_module/Initialize()
 	..()
 	var/turf/T = loc
 	hide(!T.is_plating())
 	center = T
+	SSradio.add_object(src, freq, RADIO_MAGNETS)
+	return INITIALIZE_HINT_LATELOAD
 
-	spawn(10)	// must wait for map loading to finish
-		if(radio_controller)
-			radio_controller.add_object(src, freq, RADIO_MAGNETS)
+/obj/machinery/magnetic_module/LateInitialize()
+	magnetic_process()
 
-	spawn()
-		magnetic_process()
+/obj/machinery/magnetic_module/Destroy()
+	SSradio.remove_object(src, freq)
+	return ..()
 
 // update the invisibility and icon
-/obj/machinery/magnetic_module/hide(var/intact)
+/obj/machinery/magnetic_module/hide(intact)
 	invisibility = intact ? 101 : 0
 	updateicon()
 
@@ -62,11 +64,11 @@
 	var/command = signal.data["command"]
 	var/modifier = signal.data["modifier"]
 	var/signal_code = signal.data["code"]
-	if(command && (signal_code == code))
 
+	if(command && (signal_code == code))
 		Cmd(command, modifier)
 
-/obj/machinery/magnetic_module/proc/Cmd(var/command, var/modifier)
+/obj/machinery/magnetic_module/proc/Cmd(command, modifier)
 	if(command)
 		switch(command)
 			if("set-electriclevel")
@@ -117,8 +119,7 @@
 				on = !on
 
 				if(on)
-					spawn()
-						magnetic_process()
+					INVOKE_ASYNC(src, .proc/magnetic_process)
 
 /obj/machinery/magnetic_module/process()
 	if(stat & NOPOWER)
@@ -179,11 +180,6 @@
 
 	pull_active = 0
 
-/obj/machinery/magnetic_module/Destroy()
-	if(radio_controller)
-		radio_controller.remove_object(src, freq)
-	..()
-
 /obj/machinery/magnetic_controller
 	name = "Magnetic Control Console"
 	icon = 'icons/obj/airlock_machines.dmi' // uses an airlock machine icon, THINK GREEN HELP THE ENVIRONMENT - RECYCLING!
@@ -209,23 +205,22 @@
 	var/datum/radio_frequency/radio_connection
 
 
-/obj/machinery/magnetic_controller/New()
-	..()
-
+/obj/machinery/magnetic_controller/Initialize()
+	. = ..()
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in machines)
 			if(M.freq == frequency && M.code == code)
 				magnets.Add(M)
 
-
-	spawn(45)	// must wait for map loading to finish
-		if(radio_controller)
-			radio_connection = radio_controller.add_object(src, frequency, RADIO_MAGNETS)
-
-
 	if(path) // check for default path
 		filter_path() // renders rpath
+	radio_connection = SSradio.add_object(src, frequency, RADIO_MAGNETS)
 
+/obj/machinery/magnetic_controller/Destroy()
+	SSradio.remove_object(src, frequency)
+	magnets = null
+	rpath = null
+	return ..()
 
 /obj/machinery/magnetic_controller/process()
 	if(magnets.len == 0 && autolink)
@@ -389,8 +384,3 @@
 			rpath += copytext(path, i, i+1) // else, add to list
 
 		// there doesn't HAVE to be separators but it makes paths syntatically visible
-
-/obj/machinery/magnetic_controller/Destroy()
-	if(radio_controller)
-		radio_controller.remove_object(src, frequency)
-	..()

@@ -46,9 +46,7 @@
 	req_one_access = list(access_atmospherics, access_engine_equip)
 	var/alarm_id = null
 	var/breach_detection = 1 // Whether to use automatic breach detection or not
-	var/frequency = 1439
 	//var/skipprocess = 0 //Experimenting
-	var/alarm_frequency = 1437
 	var/remote_control = 0
 	var/rcon_setting = 2
 	var/rcon_time = 0
@@ -58,7 +56,7 @@
 	var/shorted = 0
 	circuit = /obj/item/circuitboard/airalarm
 
-	var/datum/wires/alarm/wires
+	var/datum/wires/wires
 
 	var/mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
@@ -68,6 +66,8 @@
 	var/target_temperature = T0C+20
 	var/regulating_temperature = 0
 
+	var/frequency = FREQ_ATMOS_CONTROL
+	var/alarm_frequency = FREQ_ATMOS_ALARMS
 	var/datum/radio_frequency/radio_connection
 
 	var/list/TLV = list()
@@ -95,8 +95,8 @@
 /obj/machinery/alarm/alarms_hidden
 	alarms_hidden = TRUE
 
-/obj/machinery/alarm/server/New()
-	..()
+/obj/machinery/alarm/server/Initialize(mapload, ndir, nbuild)
+	. = ..()
 	req_access = list(access_rd, access_atmospherics, access_engine_equip)
 	TLV["oxygen"] =			list(-1.0, -1.0,-1.0,-1.0) // Partial pressure, kpa
 	TLV["carbon dioxide"] = list(-1.0, -1.0,   5,  10) // Partial pressure, kpa
@@ -107,7 +107,7 @@
 	target_temperature = 90
 
 /obj/machinery/alarm/Destroy()
-	unregister_radio(src, frequency)
+	SSradio.remove_object(src, frequency)
 	qdel(wires)
 	wires = null
 	if(alarm_area && alarm_area.master_air_alarm == src)
@@ -115,18 +115,26 @@
 		elect_master(exclude_self = TRUE)
 	return ..()
 
-/obj/machinery/alarm/New()
-	..()
-	first_run()
+/obj/machinery/alarm/Initialize(mapload, ndir, nbuild)
+	. = ..()
+	wires = new /datum/wires/alarm(src)
 
-/obj/machinery/alarm/proc/first_run()
+	if(ndir)
+		setDir(ndir)
+	/*
+	if(nbuild) not yet implimented?
+		buildstage = 0
+		panel_open = TRUE
+		pixel_x = (dir & 3)? 0 : (dir == 4 ? -24 : 24)
+		pixel_y = (dir & 3)? (dir == 1 ? -24 : 24) : 0
+	*/
 	alarm_area = get_area(src)
 	area_uid = alarm_area.uid
-	if(name == "alarm")
+	if(name == initial(name))
 		name = "[alarm_area.name] Air Alarm"
 
-	if(!wires)
-		wires = new(src)
+	if(!master_is_operating())
+		elect_master()
 
 	// breathable air according to human/Life()
 	TLV["oxygen"] =			list(16, 19, 135, 140) // Partial pressure, kpa
@@ -136,12 +144,8 @@
 	TLV["pressure"] =		list(ONE_ATMOSPHERE * 0.80, ONE_ATMOSPHERE * 0.90, ONE_ATMOSPHERE * 1.10, ONE_ATMOSPHERE * 1.20) /* kpa */
 	TLV["temperature"] =	list(T0C - 26, T0C, T0C + 40, T0C + 66) // K
 
-
-/obj/machinery/alarm/Initialize()
-	. = ..()
 	set_frequency(frequency)
-	if(!master_is_operating())
-		elect_master()
+
 
 /obj/machinery/alarm/process()
 	if((stat & (NOPOWER|BROKEN)) || shorted)
@@ -336,7 +340,7 @@
 		elect_master()
 		if(alarm_area.master_air_alarm != src)
 			return
-	if(!signal || signal.encryption)
+	if(!signal)
 		return
 	var/id_tag = signal.data["tag"]
 	if(!id_tag)
@@ -380,26 +384,21 @@
 		send_signal(id_tag, list("status"))
 
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = radio_controller.add_object(src, frequency, RADIO_TO_AIRALARM)
+	radio_connection = SSradio.add_object(src, frequency, RADIO_TO_AIRALARM)
 
-/obj/machinery/alarm/proc/send_signal(var/target, var/list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
+/obj/machinery/alarm/proc/send_signal(target, list/command, mob/user)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection)
-		return 0
+		return FALSE
 
-	var/datum/signal/signal = new
-	signal.transmission_method = 1 //radio signal
-	signal.source = src
-
-	signal.data = command
+	var/datum/signal/signal = new(command)
 	signal.data["tag"] = target
 	signal.data["sigtype"] = "command"
-
+	signal.data["user"] = user
 	radio_connection.post_signal(src, signal, RADIO_FROM_AIRALARM)
-//			world << text("Signal [] Broadcasted to []", command, target)
 
-	return 1
+	return TRUE
 
 /obj/machinery/alarm/proc/apply_mode()
 	//propagate mode to other air alarms in the area
@@ -445,15 +444,14 @@
 	update_icon()
 
 /obj/machinery/alarm/proc/post_alert(alert_level)
-	var/datum/radio_frequency/frequency = radio_controller.return_frequency(alarm_frequency)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(alarm_frequency)
 	if(!frequency)
 		return
 
-	var/datum/signal/alert_signal = new
-	alert_signal.source = src
-	alert_signal.transmission_method = 1
-	alert_signal.data["zone"] = alarm_area.name
-	alert_signal.data["type"] = "Atmospheric"
+	var/datum/signal/alert_signal = new(list(
+		"zone" = alarm_area.name,
+		"type" = "Atmospheric"
+	))
 
 	if(alert_level==2)
 		alert_signal.data["alert"] = "severe"

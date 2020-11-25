@@ -44,13 +44,19 @@
 			update_state(3)
 
 
-/obj/item/clothing/accessory/collar/lifecrystal/proc/ebroadcast(var/message)
-	var/list/datum/radio_frequency/secure_radio_connections = new
-	var/datum/radio_frequency/connection = secure_radio_connections["Medical"]
+/obj/item/clothing/accessory/collar/lifecrystal/proc/ebroadcast(message)
+	var/datum/signal/subspace/vocal/signal = new(src, FREQ_MEDICAL, src, null, message, list()) //spans = list(), null = language
+	signal.transmission_method = TRANSMISSION_SUPERSPACE //gamerspace transmission
+	signal.levels = list(0)  // reaches all Z-levels
+	signal.broadcast()
+	//var/list/datum/radio_frequency/secure_radio_connections = new
+	//var/datum/radio_frequency/connection = secure_radio_connections["Medical"]
+	/*
 	Broadcast_Message(connection, owner,
 				0, "*garbled alert*", null,
 				message, "[owner.real_name]'s Life Crystal", "Life Alert", "[owner.real_name]'s Life Crystal", "shrill synthetic voice",
 				0, 0, list(0), connection.frequency, "alarms", null)
+	*/
 
 /obj/item/clothing/accessory/collar/lifecrystal/proc/update_state(var/tostate)
 	state = tostate

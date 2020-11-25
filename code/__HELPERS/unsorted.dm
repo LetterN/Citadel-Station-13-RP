@@ -260,18 +260,25 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			return 0
 	return 1
 
-//Ensure the frequency is within bounds of what it should be sending/recieving at
-/proc/sanitize_frequency(var/f, var/low = PUBLIC_LOW_FREQ, var/high = PUBLIC_HIGH_FREQ)
-	f = round(f)
-	f = max(low, f)
-	f = min(high, f)
-	if ((f % 2) == 0) //Ensure the last digit is an odd number
-		f += 1
-	return f
+// Ensure the frequency is within bounds of what it should be sending/receiving at
+/proc/sanitize_frequency(frequency, free = FALSE)
+	frequency = round(frequency)
+	if(free)
+		. = clamp(frequency, MIN_FREE_FREQ, MAX_FREE_FREQ)
+	else
+		. = clamp(frequency, MIN_FREQ, MAX_FREQ)
+	if(!(. % 2)) // Ensure the last digit is an odd number
+		. += 1
 
-//Turns 1479 into 147.9
-/proc/format_frequency(var/f)
-	return "[round(f / 10)].[f % 10]"
+// Format frequency by moving the decimal.
+/proc/format_frequency(frequency)
+	frequency = text2num(frequency)
+	return "[round(frequency / 10)].[frequency % 10]"
+
+//Opposite of format, returns as a number
+/proc/unformat_frequency(frequency)
+	frequency = text2num(frequency)
+	return frequency * 10
 
 
 

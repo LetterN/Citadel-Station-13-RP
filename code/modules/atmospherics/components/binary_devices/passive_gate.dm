@@ -32,8 +32,8 @@
 	air2.volume = ATMOS_DEFAULT_VOLUME_PUMP * 2.5
 
 /obj/machinery/atmospherics/binary/passive_gate/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
+	SSradio.remove_object(src,frequency)
+	return ..()
 
 /obj/machinery/atmospherics/binary/passive_gate/update_icon()
 	icon_state = (unlocked && flowing)? "on" : "off"
@@ -102,10 +102,10 @@
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = radio_controller.add_object(src, frequency, RADIO_ATMOSIA)
+		radio_connection = SSradio.add_object(src, frequency, filter = RADIO_ATMOSIA)
 
 /obj/machinery/atmospherics/binary/passive_gate/proc/broadcast_status()
 	if(!radio_connection)

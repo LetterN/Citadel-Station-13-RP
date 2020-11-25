@@ -47,7 +47,7 @@ var/datum/antagonist/trader/traders
 	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/brown(src), slot_gloves)
 	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(src), slot_glasses)
 
-	create_radio(PUB_FREQ, player) //Assume they tune their headsets into the station's public radio as they approach
+	create_radio(FREQ_COMMON, player) //Assume they tune their headsets into the station's public radio as they approach
 
 	var/obj/item/card/id/id = create_id("Trader", player, equip = 0)
 	id.name = "[player.real_name]'s Passport"

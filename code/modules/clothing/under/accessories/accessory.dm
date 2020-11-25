@@ -562,7 +562,7 @@
 	return
 
 /obj/item/clothing/accessory/collar/bell/proc/jingledreset()
-		jingled = 0
+	jingled = 0
 
 /obj/item/clothing/accessory/collar/shock
 	name = "Shock collar"
@@ -576,27 +576,27 @@
 	var/datum/radio_frequency/radio_connection
 
 /obj/item/clothing/accessory/collar/shock/Initialize()
-	..()
-	radio_connection = radio_controller.add_object(src, frequency, RADIO_CHAT) // Makes it so you don't need to change the frequency off of default for it to work.
+	. = ..()
+	set_frequency(frequency)
 
-/obj/item/clothing/accessory/collar/shock/Destroy() //Clean up your toys when you're done.
-	radio_controller.remove_object(src, frequency)
-	radio_connection = null //Don't delete this, this is a shared object.
+/obj/item/clothing/accessory/collar/shock/shock()
+	SSradio.remove_object(src, frequency)
 	return ..()
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
-	radio_controller.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = radio_controller.add_object(src, frequency, RADIO_CHAT)
+	SSradio.add_object(src, frequency, RADIO_SIGNALER)
 
 /obj/item/clothing/accessory/collar/shock/Topic(href, href_list)
 	if(usr.stat || usr.restrained())
 		return
-	if(((istype(usr, /mob/living/carbon/human) && ((!( SSticker ) || (SSticker && SSticker.mode != "monkey")) && usr.contents.Find(src))) || (usr.contents.Find(master) || (in_range(src, usr) && istype(loc, /turf)))))
+	if(istype(usr, /mob/living/carbon/human) || (usr.contents.Find(master) || in_range(src, usr))) //fuck you
 		usr.set_machine(src)
 		if(href_list["freq"])
 			var/new_frequency = sanitize_frequency(frequency + text2num(href_list["freq"]))
 			set_frequency(new_frequency)
+			. = TRUE
 		if(href_list["tag"])
 			var/str = copytext(reject_bad_text(input(usr,"Tag text?","Set tag","")),1,MAX_NAME_LEN)
 			if(!str || !length(str))
@@ -607,17 +607,16 @@
 				to_chat(usr,"<span class='notice'>You set the [name]'s tag to '[str]'.</span>")
 				name = initial(name) + " ([str])"
 				desc = initial(desc) + " The tag says \"[str]\"."
-		else
-			if(href_list["code"])
-				code += text2num(href_list["code"])
-				code = round(code)
-				code = min(100, code)
-				code = max(1, code)
-			else
-				if(href_list["power"])
-					on = !( on )
-					icon_state = "collar_shk[on]" // And apparently this works, too?!
-		if(!( master ))
+			. = TRUE
+		if(href_list["code"])
+			code += text2num(href_list["code"])
+			code = round(code)
+			code = clamp(code, 1, 100)
+			. = TRUE
+		if(href_list["power"])
+			on = !on
+			icon_state = "collar_shk[on]" // And apparently this works, too?!
+		if(!master)
 			if(istype(loc, /mob))
 				attack_self(loc)
 			else
@@ -637,7 +636,7 @@
 	return
 
 /obj/item/clothing/accessory/collar/shock/receive_signal(datum/signal/signal)
-	if(!signal || signal.encryption != code)
+	if(!signal || signal.data["code"] != code)
 		return
 
 	if(on)
@@ -646,15 +645,19 @@
 			M = loc
 		if(ismob(loc.loc))
 			M = loc.loc // This is about as terse as I can make my solution to the whole 'collar won't work when attached as accessory' thing.
+
 		to_chat(M,"<span class='danger'>You feel a sharp shock!</span>")
 		var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 		s.set_up(3, 1, M)
 		s.start()
 		M.Weaken(10)
+
+	if(master)
+		master.receive_signal()
 	return
 
-/obj/item/clothing/accessory/collar/shock/attack_self(mob/user as mob, flag1)
-	if(!istype(user, /mob/living/carbon/human))
+/obj/item/clothing/accessory/collar/shock/attack_self(mob/user, flag1)
+	if(!ishuman(user))
 		return
 	user.set_machine(src)
 	var/dat = {"<TT>
@@ -722,8 +725,9 @@
 	icon_state = "collar_holo"
 	item_state = "collar_holo_overlay"
 	overlay_state = "collar_holo_overlay"
+
 //Make indigestible
-/obj/item/clothing/accessory/collar/holo/indigestible/digest_act(var/atom/movable/item_storage = null)
+/obj/item/clothing/accessory/collar/holo/indigestible/digest_act(atom/movable/item_storage)
 	return FALSE
 
 /obj/item/clothing/accessory/collar/attack_self(mob/user as mob)
