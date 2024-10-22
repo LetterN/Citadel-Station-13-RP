@@ -13,7 +13,7 @@
 
 import { perf } from 'common/perf';
 import { createAction } from 'common/redux';
-import { SectionProps } from './components/Section';
+
 import { setupDrag } from './drag';
 import { globalEvents } from './events';
 import { focusMap } from './focus';
@@ -22,9 +22,13 @@ import { resumeRenderer, suspendRenderer } from './renderer';
 
 const logger = createLogger('backend');
 
+export let globalStore;
+
+export const setGlobalStore = (store) => {
+  globalStore = store;
+};
+
 export const backendUpdate = createAction('backend/update');
-export const backendData = createAction('backend/data');
-export const backendModuleData = createAction('backend/modules');
 export const backendSetSharedState = createAction('backend/setSharedState');
 export const backendSuspendStart = createAction('backend/suspendStart');
 
@@ -38,7 +42,6 @@ export const backendSuspendSuccess = () => ({
 const initialState = {
   config: {},
   data: {},
-  modules: {},
   shared: {},
   // Start as suspended
   suspended: Date.now(),
@@ -57,22 +60,9 @@ export const backendReducer = (state = initialState, action) => {
     // Merge data
     const data = {
       ...state.data,
-      ...payload.static,
+      ...payload.static_data,
       ...payload.data,
     };
-    // Merge modules
-    const modules = {
-      ...state.modules,
-    };
-    if (payload.modules) {
-      const merging = payload.modules;
-      for (let id of Object.keys(merging)) {
-        modules[id] = {
-          ...modules[id],
-          ...merging[id],
-        };
-      }
-    }
     // Merge shared states
     const shared = { ...state.shared };
     if (payload.shared) {
@@ -80,8 +70,7 @@ export const backendReducer = (state = initialState, action) => {
         const value = payload.shared[key];
         if (value === '') {
           shared[key] = undefined;
-        }
-        else {
+        } else {
           shared[key] = JSON.parse(value);
         }
       }
@@ -91,41 +80,8 @@ export const backendReducer = (state = initialState, action) => {
       ...state,
       config,
       data,
-      modules,
       shared,
       suspended: false,
-    };
-  }
-
-  if (type === 'backend/data') {
-    // Merge data
-    const data = {
-      ...state.data,
-      ...payload,
-    };
-    // Return new state
-    return {
-      ...state,
-      data,
-    };
-  }
-
-  if (type === 'backend/modules') {
-    // Merge modules
-    const modules = {
-      ...state.modules,
-    };
-    for (let id of Object.keys(payload)) {
-      const data = payload[id];
-      modules[id] = {
-        ...modules[id],
-        ...data,
-      };
-    }
-    // Return new state
-    return {
-      ...state,
-      modules,
     };
   }
 
@@ -166,26 +122,16 @@ export const backendReducer = (state = initialState, action) => {
   return state;
 };
 
-export const backendMiddleware = store => {
+export const backendMiddleware = (store) => {
   let fancyState;
   let suspendInterval;
 
-  return next => action => {
+  return (next) => (action) => {
     const { suspended } = selectBackend(store.getState());
     const { type, payload } = action;
 
     if (type === 'update') {
       store.dispatch(backendUpdate(payload));
-      return;
-    }
-
-    if (type === 'data') {
-      store.dispatch(backendData(payload));
-      return;
-    }
-
-    if (type === 'modules') {
-      store.dispatch(backendModuleData(payload));
       return;
     }
 
@@ -199,12 +145,20 @@ export const backendMiddleware = store => {
       return;
     }
 
-    if (type === "byond/mousedown") {
-      globalEvents.emit("byond/mousedown");
+    if (type === 'byond/mousedown') {
+      globalEvents.emit('byond/mousedown');
     }
 
-    if (type === "byond/mouseup") {
-      globalEvents.emit("byond/mouseup");
+    if (type === 'byond/mouseup') {
+      globalEvents.emit('byond/mouseup');
+    }
+
+    if (type === 'byond/ctrldown') {
+      globalEvents.emit('byond/ctrldown');
+    }
+
+    if (type === 'byond/ctrlup') {
+      globalEvents.emit('byond/ctrlup');
     }
 
     if (type === 'backend/suspendStart' && !suspendInterval) {
@@ -223,7 +177,7 @@ export const backendMiddleware = store => {
       Byond.winset(Byond.windowId, {
         'is-visible': false,
       });
-      setImmediate(() => focusMap());
+      setTimeout(() => focusMap());
     }
 
     if (type === 'backend/update') {
@@ -253,7 +207,7 @@ export const backendMiddleware = store => {
       setupDrag();
       // We schedule this for the next tick here because resizing and unhiding
       // during the same tick will flash with a white background.
-      setImmediate(() => {
+      setTimeout(() => {
         perf.mark('resume/start');
         // Doublecheck if we are not re-suspended.
         const { suspended } = selectBackend(store.getState());
@@ -265,8 +219,10 @@ export const backendMiddleware = store => {
         });
         perf.mark('resume/finish');
         if (process.env.NODE_ENV !== 'production') {
-          logger.log('visible in',
-            perf.measure('render/finish', 'resume/finish'));
+          logger.log(
+            'visible in',
+            perf.measure('render/finish', 'resume/finish'),
+          );
         }
       });
     }
@@ -275,21 +231,13 @@ export const backendMiddleware = store => {
   };
 };
 
-export type actFunctionType = (action: string, payload?: object, route_id?: string | null) => void;
-
 /**
  * Sends an action to `ui_act` on `src_object` that this tgui window
  * is associated with.
- *
- * todo: overhaul module system
- *
- * @params
- * * action - action string
- * * payload - payload object; this is the list/params byond-side
- * * route_id - route via ui_route() with given id instead of ui_act()
  */
-export const sendAct: actFunctionType = (action: string, payload: object = {}, route_id?: string | null) => {
+export const sendAct = (action: string, payload: object = {}) => {
   // Validate that payload is an object
+  // prettier-ignore
   const isObject = typeof payload === 'object'
     && payload !== null
     && !Array.isArray(payload);
@@ -297,63 +245,51 @@ export const sendAct: actFunctionType = (action: string, payload: object = {}, r
     logger.error(`Payload for act() must be an object, got this:`, payload);
     return;
   }
-  if (route_id) {
-    payload['$m_id'] = route_id;
-  }
-  Byond.sendMessage((route_id? 'mod/' : 'act/') + action, payload);
+  Byond.sendMessage('act/' + action, payload);
 };
 
-type BackendContext = {
+type BackendState<TData> = {
   config: {
-    title: string,
-    status: number,
-    interface: string,
-    refreshing: number,
+    title: string;
+    status: number;
+    interface: string;
+    refreshing: boolean;
     window: {
-      key: string,
-      fancy: boolean,
-      locked: boolean,
-    },
+      key: string;
+      size: [number, number];
+      fancy: boolean;
+      locked: boolean;
+    };
     client: {
-      ckey: string,
-      address: string,
-      computer_id: string,
-    },
+      ckey: string;
+      address: string;
+      computer_id: string;
+    };
     user: {
-      name: string,
-      observer: number,
-    },
-  },
-  modules: Record<string, any>,
-  shared: Record<string, any>,
-  computeCache: Record<string, any>,
-  suspending: boolean,
-  suspended: boolean,
+      name: string;
+      observer: number;
+    };
+  };
+  data: TData;
+  shared: Record<string, any>;
+  suspending: boolean;
+  suspended: boolean;
 };
-
-export type Backend<TData> = BackendContext & {
-  data: TData,
-  act: actFunctionType,
-}
 
 /**
  * Selects a backend-related slice of Redux state
  */
-export const selectBackend = <TData>(state: any): Backend<TData> => (
-  state.backend || {}
-);
+export const selectBackend = <TData>(state: any): BackendState<TData> =>
+  state.backend || {};
 
 /**
- * A React hook (sort of) for getting tgui state and related functions.
+ * Get data from tgui backend.
  *
- * This is supposed to be replaced with a real React Hook, which can only
- * be used in functional components.
- *
- * You can make
+ * Includes the `act` function for performing DM actions.
  */
-export const useBackend = <TData>(context: any): Backend<TData> => {
-  const { store } = context;
-  const state = selectBackend<TData>(store.getState());
+export const useBackend = <TData>() => {
+  const state: BackendState<TData> = globalStore?.getState()?.backend;
+
   return {
     ...state,
     act: sendAct,
@@ -377,57 +313,30 @@ type StateWithSetter<T> = [T, (nextState: T) => void];
  * @param context React context.
  * @param key Key which uniquely identifies this state in Redux store.
  * @param initialState Initializes your global variable with this value.
+ * @deprecated Use useState and useEffect when you can. Pass the state as a prop.
  */
 export const useLocalState = <T>(
-  context: any,
   key: string,
   initialState: T,
 ): StateWithSetter<T> => {
-  const { store } = context;
-  const state = selectBackend(store.getState());
-  const sharedStates = state.shared ?? {};
-  const sharedState = (key in sharedStates)
-    ? sharedStates[key]
-    : initialState;
+  const state = globalStore?.getState()?.backend;
+  const sharedStates = state?.shared ?? {};
+  const sharedState = key in sharedStates ? sharedStates[key] : initialState;
   return [
     sharedState,
-    nextState => {
-      store.dispatch(backendSetSharedState({
-        key,
-        nextState: (
-          typeof nextState === 'function'
-            ? nextState(sharedState)
-            : nextState
-        ),
-      }));
+    (nextState) => {
+      globalStore.dispatch(
+        backendSetSharedState({
+          key,
+          nextState:
+            typeof nextState === 'function'
+              ? nextState(sharedState)
+              : nextState,
+        }),
+      );
     },
   ];
 };
-
-/**
- * Gets a computation, that should be cached.
- * Used to do initial pre-processing of data.
- *
- * todo: rethink this when we go to react or otherwise rework tgui, this is shitcode-y
- * todo: this is a bad idea. you know why?
- * todo: yeah funny thing this persists across window reloads due to store/state
- * todo: being global. fuck.
- * todo: we need like a proper hook that doesn't persist.
- */
-// export const useComputedOnce = <T>(
-//   context: any, key: string, valueClosure: () => T
-// ): T => {
-//   const { store } = context;
-//   const state = selectBackend(store.getState());
-//   if (state.computeCache?.[key]) {
-//     return state.computeCache[key];
-//   }
-//   state.computeCache = {
-//     ...state.computeCache,
-//   };
-//   state.computeCache[key] = valueClosure();
-//   return state.computeCache[key];
-// };
 
 /**
  * Allocates state on Redux store, and **shares** it with other clients
@@ -444,32 +353,39 @@ export const useLocalState = <T>(
  * @param initialState Initializes your global variable with this value.
  */
 export const useSharedState = <T>(
-  context: any,
   key: string,
   initialState: T,
 ): StateWithSetter<T> => {
-  const { store } = context;
-  const state = selectBackend(store.getState());
-  const sharedStates = state.shared ?? {};
-  const sharedState = (key in sharedStates)
-    ? sharedStates[key]
-    : initialState;
+  const state = globalStore?.getState()?.backend;
+  const sharedStates = state?.shared ?? {};
+  const sharedState = key in sharedStates ? sharedStates[key] : initialState;
   return [
     sharedState,
-    nextState => {
+    (nextState) => {
       Byond.sendMessage({
         type: 'setSharedState',
         key,
-        value: JSON.stringify(
-          typeof nextState === 'function'
-            ? nextState(sharedState)
-            : nextState
-        ) || '',
+        value:
+          JSON.stringify(
+            typeof nextState === 'function'
+              ? nextState(sharedState)
+              : nextState,
+          ) || '',
       });
     },
   ];
 };
 
+export const useDispatch = () => {
+  return globalStore.dispatch;
+};
+
+export const useSelector = (selector: (state: any) => any) => {
+  return selector(globalStore?.getState());
+};
+
+//! citrp specific
+// TODO: update since states got changed
 //* TGUI Module Backend
 
 export interface ModuleProps {
@@ -510,7 +426,7 @@ export type ModuleBackend<TData extends ModuleData> = {
  */
 export const useModule = <TData extends ModuleData>(context): ModuleBackend<TData> => {
   const { is_module } = context;
-  let backend = useBackend<TData>(context);
+  let backend = selectBackend<TData>(context);
   if (!is_module) {
     return { // not operating in module mode, just send normal backend
       backend: backend,
@@ -551,6 +467,6 @@ export const constructModuleAct = (id: string, ref: string): actFunctionType => 
  * Extracts module data from context
  */
 export const getModuleData = <TData>(context, id: string): TData => {
-  let backend = useBackend<TData>(context);
+  let backend = selectBackend<TData>(context);
   return backend.modules[id];
 };
