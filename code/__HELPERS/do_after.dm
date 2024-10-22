@@ -52,7 +52,7 @@
 			break
 
 	if(!QDELETED(progbar))
-		qdel(progbar)
+		progress.end_progress()
 
 	STOP_INTERACTING_WITH(user, target, INTERACTING_FOR_DO_AFTER)
 
@@ -172,7 +172,7 @@
 
 	//* end
 	if(!QDELETED(progress))
-		qdel(progress)
+		progress.end_progress()
 
 	if(!isnull(target))
 		STOP_INTERACTING_WITH(user, target, INTERACTING_FOR_DO_AFTER)

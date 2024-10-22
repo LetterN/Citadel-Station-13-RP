@@ -301,11 +301,11 @@
 	var/last = world.time
 	var/last_line = 0
 
-	var/datum/progressbar/progressbar = new(user, sculpting_line, src)
+	var/datum/progressbar/total_progress_bar = new(user, sculpting_line, src)
 
 	while(progress < finished_progress)
 		if(QDELETED(src))
-			QDEL_NULL(progressbar)
+			QDEL_NULL(total_progress_bar)
 			return
 		if(!do_after(user, time_per_line, src, DO_AFTER_NO_PROGRESS))
 			break
@@ -323,9 +323,9 @@
 
 		progress += world.time - last
 		last = world.time
-		progressbar.update(sculpting_line - should_be_at)
+		total_progress_bar.update(sculpting_line - should_be_at)
 
-	QDEL_NULL(progressbar)
+	total_progress_bar.end_progress()
 
 	lines = min(sculpting_line, progress / time_per_line)
 
