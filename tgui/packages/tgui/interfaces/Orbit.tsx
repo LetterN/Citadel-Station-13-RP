@@ -107,7 +107,7 @@ export const Orbit = (props: any, context: any) => {
     npcs,
   } = data;
 
-  const [searchText, setSearchText] = useLocalState(context, "searchText", "");
+  const [searchText, setSearchText] = useLocalState("searchText", "");
 
   const orbitMostRelevant = (searchText: string) => {
     for (const source of [

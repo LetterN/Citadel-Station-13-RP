@@ -34,7 +34,7 @@ export const Communicator = (props, context) => {
    * 1: Popup Video
    * 2: Minimized Video
    */
-  const [videoSetting, setVideoSetting] = useLocalState(context, 'videoSetting', 0);
+  const [videoSetting, setVideoSetting] = useLocalState('videoSetting', 0);
 
   return (
     <Window width={475} height={700} resizable>
@@ -745,7 +745,7 @@ const MessagingThreadTab = (props, context) => {
     imList,
   } = data;
 
-  const [clipboardMode, setClipboardMode] = useLocalState(context, 'clipboardMode', false);
+  const [clipboardMode, setClipboardMode] = useLocalState('clipboardMode', false);
 
   if (clipboardMode) {
     return (

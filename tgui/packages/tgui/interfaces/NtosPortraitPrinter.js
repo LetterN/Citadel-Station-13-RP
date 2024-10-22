@@ -5,7 +5,7 @@ import { NtosWindow } from '../layouts';
 
 export const NtosPortraitPrinter = (props, context) => {
   const { act, data } = useBackend(context);
-  const [listIndex, setListIndex] = useLocalState(context, 'listIndex', 0);
+  const [listIndex, setListIndex] = useLocalState('listIndex', 0);
   const {
     paintings,
     search_string,
@@ -19,7 +19,7 @@ export const NtosPortraitPrinter = (props, context) => {
   const current_portrait_asset_name = got_paintings
     && "paintings" + "_" + paintings[listIndex]["md5"];
   const current_portrait_ratio = got_paintings
-    && paintings[listIndex]["ratio"]; 
+    && paintings[listIndex]["ratio"];
   return (
     <NtosWindow
       title="Art Galaxy"

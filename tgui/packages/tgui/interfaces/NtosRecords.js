@@ -5,7 +5,7 @@ import { NtosWindow } from '../layouts';
 
 export const NtosRecords = (props, context) => {
   const { act, data } = useBackend(context);
-  const [searchTerm, setSearchTerm] = useLocalState(context, "search", "");
+  const [searchTerm, setSearchTerm] = useLocalState("search", "");
   const {
     mode,
     records,

@@ -18,9 +18,9 @@ export const Adminhelp = (props, context) => {
     bannedFromUrgentAhelp,
     urgentAhelpPromptMessage,
   } = data;
-  const [requestForAdmin, setRequestForAdmin] = useLocalState(context, "request_for_admin", false);
-  const [currentlyInputting, setCurrentlyInputting] = useLocalState(context, "confirm_request", false);
-  const [ahelpMessage, setAhelpMessage] = useLocalState(context, "ahelp_message", "");
+  const [requestForAdmin, setRequestForAdmin] = useLocalState("request_for_admin", false);
+  const [currentlyInputting, setCurrentlyInputting] = useLocalState("confirm_request", false);
+  const [ahelpMessage, setAhelpMessage] = useLocalState("ahelp_message", "");
 
   const confirmationText = "alert admins";
   return (

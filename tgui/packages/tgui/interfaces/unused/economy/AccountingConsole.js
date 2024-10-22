@@ -11,7 +11,7 @@ export const AccountingConsole = (props, context) => {
   } = data;
   const USER_SCREEN = 1;
   const AUDIT_SCREEN = 2;
-  const [screenmode, setScreenmode] = useLocalState(context, 'tab_main', USER_SCREEN);
+  const [screenmode, setScreenmode] = useLocalState('tab_main', USER_SCREEN);
   return (
     <Window
       width={300}
@@ -74,7 +74,7 @@ export const AccountingConsole = (props, context) => {
 /** The modal menu that contains the prompts to making new channels. */
 const MarketCrashing = (props, context) => {
   const { act, data } = useBackend(context);
-  const [lockedmode, setLockedmode] = useLocalState(context, 'lockedmode', 1);
+  const [lockedmode, setLockedmode] = useLocalState('lockedmode', 1);
   const {
     Crashing,
   } = data;

@@ -41,7 +41,7 @@ export const PaiCard = (_, context) => {
 const PaiDownload = (_, context) => {
   const { act, data } = useBackend<PaiCardData>(context);
   const { candidates = [] } = data;
-  const [tabInChar, setTabInChar] = useLocalState(context, 'tab', true);
+  const [tabInChar, setTabInChar] = useLocalState('tab', true);
   const onClick = () => {
     setTabInChar(!tabInChar);
   };

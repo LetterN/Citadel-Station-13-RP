@@ -172,7 +172,7 @@ const VoreSelectedBelly = (props, context) => {
   const { belly } = props;
   const { contents } = belly;
 
-  const [tabIndex, setTabIndex] = useLocalState(context, 'tabIndex', 0);
+  const [tabIndex, setTabIndex] = useLocalState('tabIndex', 0);
 
   const tabs = [];
 

@@ -128,7 +128,7 @@ const DepartmentCatalog = (props, context) => {
   const [
     tabCategory,
     setTabCategory,
-  ] = useLocalState(context, 'tabName', supplies[0]);
+  ] = useLocalState('tabName', supplies[0]);
   return (
     <Stack vertical fill>
       <Stack.Item>

@@ -30,8 +30,8 @@ export const NIF = (props, context) => {
     last_notification,
   } = data;
 
-  const [settingsOpen, setSettingsOpen] = useLocalState(context, "settingsOpen", false);
-  const [viewingModule, setViewing] = useLocalState(context, "viewingModule", null);
+  const [settingsOpen, setSettingsOpen] = useLocalState("settingsOpen", false);
+  const [viewingModule, setViewing] = useLocalState("viewingModule", null);
 
   return (
     <Window theme={theme} width={500} height={400} resizable>

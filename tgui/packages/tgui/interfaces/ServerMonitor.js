@@ -104,8 +104,8 @@ const MainScreen = (props, context) => {
   const [
     networkId,
     setNetworkId,
-  ] = useLocalState(context, "networkId", network);
-  
+  ] = useLocalState("networkId", network);
+
   return (
     <Stack fill vertical>
       <Stack.Item>

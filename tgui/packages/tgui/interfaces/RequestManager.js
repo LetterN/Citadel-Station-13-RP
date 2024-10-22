@@ -20,7 +20,7 @@ export const RequestManager = (props, context) => {
       Object.entries(displayTypeMap).map(([type, _]) => [type, true])
     )
   );
-  const [searchText, setSearchText] = useLocalState(context, 'searchText');
+  const [searchText, setSearchText] = useLocalState('searchText');
 
   // Handle filtering
   let displayedRequests = requests.filter(

@@ -147,11 +147,11 @@ export const TechwebContent = (props, context) => {
   const [
     techwebRoute,
     setTechwebRoute,
-  ] = useLocalState(context, 'techwebRoute', null);
+  ] = useLocalState('techwebRoute', null);
   const [
     lastPoints,
     setLastPoints,
-  ] = useLocalState(context, 'lastPoints', {});
+  ] = useLocalState('lastPoints', {});
 
   return (
     <Flex direction="column" className="Techweb__Viewport" height="100%">
@@ -215,7 +215,7 @@ export const TechwebContent = (props, context) => {
 const TechwebRouter = (props, context) => {
   const [
     techwebRoute,
-  ] = useLocalState(context, 'techwebRoute', null);
+  ] = useLocalState('techwebRoute', null);
 
   const route = techwebRoute?.route;
   const RoutedComponent = (
@@ -235,11 +235,11 @@ const TechwebOverview = (props, context) => {
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'overviewTabIndex', 1);
+  ] = useLocalState('overviewTabIndex', 1);
   const [
     searchText,
     setSearchText,
-  ] = useLocalState(context, 'searchText');
+  ] = useLocalState('searchText');
 
   // Only search when 3 or more characters have been input
   const searching = searchText && searchText.trim().length > 1;
@@ -334,7 +334,7 @@ const TechwebDiskMenu = (props, context) => {
   const [
     techwebRoute,
     setTechwebRoute,
-  ] = useLocalState(context, 'techwebRoute', null);
+  ] = useLocalState('techwebRoute', null);
 
   // Check for the disk actually being inserted
   if ((diskType === "design" && !d_disk) || (diskType === "tech" && !t_disk)) {
@@ -409,11 +409,11 @@ const TechwebDesignDisk = (props, context) => {
   const [
     selectedDesign,
     setSelectedDesign,
-  ] = useLocalState(context, "designDiskSelect", null);
+  ] = useLocalState("designDiskSelect", null);
   const [
     showModal,
     setShowModal,
-  ] = useLocalState(context, 'showDesignModal', -1);
+  ] = useLocalState('showDesignModal', -1);
 
   const designIdByIdx = Object.keys(researched_designs);
   const designOptions = flow([
@@ -522,11 +522,11 @@ const TechNodeDetail = (props, context) => {
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'nodeDetailTabIndex', 0);
+  ] = useLocalState('nodeDetailTabIndex', 0);
   const [
     techwebRoute,
     setTechwebRoute,
-  ] = useLocalState(context, 'techwebRoute', null);
+  ] = useLocalState('techwebRoute', null);
 
   const prereqNodes = nodes.filter(x => prereq_ids.includes(x.id));
   const complPrereq = prereq_ids
@@ -609,11 +609,11 @@ const TechNode = (props, context) => {
   const [
     techwebRoute,
     setTechwebRoute,
-  ] = useLocalState(context, 'techwebRoute', null);
+  ] = useLocalState('techwebRoute', null);
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'nodeDetailTabIndex', 0);
+  ] = useLocalState('nodeDetailTabIndex', 0);
 
   const expcompl = required_experiments
     .filter(x => experiments[x]?.completed)

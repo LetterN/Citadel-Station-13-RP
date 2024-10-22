@@ -8,7 +8,7 @@ export const BloodFilter = (props, context) => {
   const {
     whitelist = [],
   } = data;
-  const [chemName, setChemName] = useLocalState(context, 'chemName', '');
+  const [chemName, setChemName] = useLocalState('chemName', '');
   return (
     <Window
       width={500}

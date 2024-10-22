@@ -144,7 +144,7 @@ const SupplyConsoleMenu = (props, context) => {
     order_auth,
   } = data;
 
-  const [tabIndex, setTabIndex] = useLocalState(context, "tabIndex", 0);
+  const [tabIndex, setTabIndex] = useLocalState("tabIndex", 0);
 
   return (
     <Section title="Menu">
@@ -199,7 +199,7 @@ const SupplyConsoleMenuOrder = (props, context) => {
     supply_points,
   } = data;
 
-  const [activeCategory, setActiveCategory] = useLocalState(context, "activeCategory", null);
+  const [activeCategory, setActiveCategory] = useLocalState("activeCategory", null);
 
   const viewingPacks = flow([
     filter(val => val.group === activeCategory),

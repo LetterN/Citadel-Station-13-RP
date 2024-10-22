@@ -19,10 +19,10 @@ export const GenericUplink = (props: GenericUplinkProps, context) => {
   } = props;
   const [
     searchText, setSearchText,
-  ] = useLocalState(context, 'searchText', '');
+  ] = useLocalState('searchText', '');
   const [
     selectedCategory, setSelectedCategory,
-  ] = useLocalState(context, 'category', categories[0]);
+  ] = useLocalState('category', categories[0]);
   const [
     compactMode, setCompactMode,
   ] = useSharedState(context, 'compactModeUplink', false);

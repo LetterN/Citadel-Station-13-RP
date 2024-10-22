@@ -86,7 +86,7 @@ const TableOfContents = (props, context) => {
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'tab-index', 1);
+  ] = useLocalState('tab-index', 1);
   return (
     <Box textAlign="center">
       <Button
@@ -365,7 +365,7 @@ export const Spellbook = (props, context) => {
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'tab-index', 1);
+  ] = useLocalState('tab-index', 1);
   const ScrollableCheck = TAB2NAME[tabIndex-1].noScrollable ? false : true;
   const ScrollableNextCheck = TAB2NAME[tabIndex-1].noScrollable !== 2;
   const TabComponent = TAB2NAME[tabIndex-1].component

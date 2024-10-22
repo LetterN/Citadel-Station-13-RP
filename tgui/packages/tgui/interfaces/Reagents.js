@@ -42,7 +42,7 @@ export const Reagents = (props, context) => {
     { flag: bitflags.COMPETITIVE, icon: "recycle" },
   ];
 
-  const [page, setPage] = useLocalState(context, "page", 1);
+  const [page, setPage] = useLocalState("page", 1);
 
   return (
     <Window
@@ -129,7 +129,7 @@ export const Reagents = (props, context) => {
 
 const TagBox = (props, context) => {
   const { act, data } = useBackend(context);
-  const [page, setPage] = useLocalState(context, "page", 1);
+  const [page, setPage] = useLocalState("page", 1);
   const { bitflags } = props;
   const { selectedBitflags } = data;
   return (
@@ -344,7 +344,7 @@ const TagBox = (props, context) => {
 
 const RecipeLibrary = (props, context) => {
   const { act, data } = useBackend(context);
-  const [page, setPage] = useLocalState(context, "page", 1);
+  const [page, setPage] = useLocalState("page", 1);
   const { flagIcons } = props;
   const {
     selectedBitflags,

@@ -128,7 +128,7 @@ const TechDisk = (props, context) => {
     return null;
   }
 
-  const [saveDialog, setSaveDialog] = useLocalState(context, "saveDialogTech", false);
+  const [saveDialog, setSaveDialog] = useLocalState("saveDialogTech", false);
 
   if (saveDialog) {
     return (
@@ -228,7 +228,7 @@ const DataDisk = (props, context) => {
     return null;
   }
 
-  const [saveDialog, setSaveDialog] = useLocalState(context, "saveDialogData", false);
+  const [saveDialog, setSaveDialog] = useLocalState("saveDialogData", false);
 
   if (saveDialog) {
     return (
@@ -524,7 +524,7 @@ const ResearchConsoleConstructor = (props, context) => {
     queue,
   } = linked;
 
-  const [protoTab, setProtoTab] = useLocalState(context, "protoTab", 0);
+  const [protoTab, setProtoTab] = useLocalState("protoTab", 0);
 
   let queueColor = "transparent";
   let queueSpin = false;
@@ -644,7 +644,7 @@ const ResearchConsoleConstructor = (props, context) => {
       ) || protoTab === 2 && (
         <LabeledList>
           {mats.map(mat => {
-            const [ejectAmt, setEjectAmt] = useLocalState(context, "ejectAmt" + mat.name, 0);
+            const [ejectAmt, setEjectAmt] = useLocalState("ejectAmt" + mat.name, 0);
             return (
               <LabeledList.Item label={toTitleCase(mat.name)}
                 key={mat.name} buttons={
@@ -730,7 +730,7 @@ const ResearchConsoleSettings = (props, context) => {
     linked_lathe,
   } = data.info;
 
-  const [settingsTab, setSettingsTab] = useLocalState(context, "settingsTab", 0);
+  const [settingsTab, setSettingsTab] = useLocalState("settingsTab", 0);
 
   return (
     <Section title="Settings">
@@ -857,7 +857,7 @@ export const ResearchConsole = (props, context) => {
     locked,
   } = data;
 
-  const [menu, setMenu] = useLocalState(context, "rdmenu", 0);
+  const [menu, setMenu] = useLocalState("rdmenu", 0);
 
   let allTabsDisabled = false;
   if (locked) {

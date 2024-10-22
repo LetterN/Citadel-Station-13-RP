@@ -46,7 +46,7 @@ const ActiveConversation = (props, context) => {
     useRetro,
   } = data;
 
-  const [clipboardMode, setClipboardMode] = useLocalState(context, 'clipboardMode', false);
+  const [clipboardMode, setClipboardMode] = useLocalState('clipboardMode', false);
 
   let body = (
     <Section

@@ -104,7 +104,7 @@ const ICON_MAP = {
 };
 
 export const PaiInterface = (_, context) => {
-  const [tab, setTab] = useLocalState(context, 'tab', 1);
+  const [tab, setTab] = useLocalState('tab', 1);
   const setTabHandler = (tab: number) => {
     setTab(tab);
   };

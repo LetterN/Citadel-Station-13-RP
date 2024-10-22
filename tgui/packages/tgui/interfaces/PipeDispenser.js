@@ -15,7 +15,7 @@ export const PipeDispenser = (props, context) => {
   const [
     categoryName,
     setCategoryName,
-  ] = useLocalState(context, 'categoryName');
+  ] = useLocalState('categoryName');
   const shownCategory = categories
     .find(category => category.cat_name === categoryName)
     || categories[0];

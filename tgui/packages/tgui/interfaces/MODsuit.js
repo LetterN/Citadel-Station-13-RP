@@ -432,7 +432,7 @@ const ModuleSection = (props, context) => {
     modules,
   } = data;
   const [configureState, setConfigureState]
-    = useLocalState(context, "module_configuration", null);
+    = useLocalState("module_configuration", null);
   return (
     <Section title="Modules" fill>
       <Flex direction="column">

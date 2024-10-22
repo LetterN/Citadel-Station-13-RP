@@ -22,7 +22,7 @@ const ShoppingTab = (props, context) => {
   const [
     shopIndex,
     setShopIndex,
-  ] = useLocalState(context, 'shop-index', 1);
+  ] = useLocalState('shop-index', 1);
   const mapped_food = order_datums.filter(food => (
     food && food.cat === shopIndex
   ));
@@ -224,7 +224,7 @@ export const ProduceConsole = (props, context) => {
   const [
     tabIndex,
     setTabIndex,
-  ] = useLocalState(context, 'tab-index', 1);
+  ] = useLocalState('tab-index', 1);
   const TabComponent = TAB2NAME[tabIndex-1].component();
   return (
     <Window

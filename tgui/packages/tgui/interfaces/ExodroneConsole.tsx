@@ -156,7 +156,7 @@ export const ExodroneConsole = (props, context) => {
   const [
     choosingTools,
     setChoosingTools,
-  ] = useLocalState(context, 'choosingTools', false);
+  ] = useLocalState('choosingTools', false);
 
   return (
     <Window width={750} height={600}>
@@ -260,7 +260,7 @@ const ToolSelectionModal = (props, context) => {
   const [
     choosingTools,
     setChoosingTools,
-  ] = useLocalState(context, 'choosingTools', false);
+  ] = useLocalState('choosingTools', false);
 
   const toolData = Object.keys(all_tools);
   return (
@@ -399,7 +399,7 @@ const EquipmentGrid = (props: {
   const [
     choosingTools,
     setChoosingTools,
-  ] = useLocalState(context, 'choosingTools', false);
+  ] = useLocalState('choosingTools', false);
   return (
     <Stack vertical fill>
       <Stack.Item grow>
@@ -534,11 +534,11 @@ const TravelTargetSelectionScreen = (props: {
   const [
     choosingTools,
     setChoosingTools,
-  ] = useLocalState(context, 'choosingTools', false);
+  ] = useLocalState('choosingTools', false);
   const [
     TravelDimmerShown,
     setTravelDimmerShown,
-  ] = useLocalState(context, 'TravelDimmerShown', false);
+  ] = useLocalState('TravelDimmerShown', false);
 
   const travel_to = ref => {
     setTravelDimmerShown(false);
@@ -696,7 +696,7 @@ const ExplorationScreen = (props: {
   const [
     TravelDimmerShown,
     setTravelDimmerShown,
-  ] = useLocalState(context, 'TravelDimmerShown', false);
+  ] = useLocalState('TravelDimmerShown', false);
 
   if (TravelDimmerShown) {
     return (<TravelTargetSelectionScreen

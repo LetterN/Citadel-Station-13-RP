@@ -10,7 +10,7 @@ export const AreaScrubberControl = (props, context) => {
   const [
     showArea,
     setShowArea,
-  ] = useLocalState(context, "showArea", false);
+  ] = useLocalState("showArea", false);
 
   const {
     scrubbers,

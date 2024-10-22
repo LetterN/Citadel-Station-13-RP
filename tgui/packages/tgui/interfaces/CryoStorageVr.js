@@ -11,7 +11,7 @@ export const CryoStorageVr = (props, context) => {
     allow_items,
   } = data;
 
-  const [tab, setTab] = useLocalState(context, "tab", 0);
+  const [tab, setTab] = useLocalState("tab", 0);
 
   return (
     <Window width={400} height={600} resizable>

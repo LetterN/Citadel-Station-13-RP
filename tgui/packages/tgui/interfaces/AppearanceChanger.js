@@ -53,7 +53,7 @@ export const AppearanceChanger = (props, context) => {
     firstAccesibleTab = 5;
   }
 
-  const [tabIndex, setTabIndex] = useLocalState(context, 'tabIndex', firstAccesibleTab);
+  const [tabIndex, setTabIndex] = useLocalState('tabIndex', firstAccesibleTab);
 
   return (
     <Window width={700} height={650} title={decodeHtmlEntities(title)}>

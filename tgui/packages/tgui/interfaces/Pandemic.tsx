@@ -241,7 +241,7 @@ const AntibodyInfoDisplay = (_, context) => {
 /** Displays info for the loaded blood, if any */
 const SpecimenDisplay = (_, context) => {
   const { act, data } = useBackend<PandemicContext>(context);
-  const [tab, setTab] = useLocalState(context, 'tab', 0);
+  const [tab, setTab] = useLocalState('tab', 0);
   const { is_ready, viruses = [] } = data;
   const virus = viruses[tab];
   const setTabHandler = (index: number) => {

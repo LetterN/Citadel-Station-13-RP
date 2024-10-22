@@ -47,7 +47,7 @@ export const Pda = (props, context) => {
 
   let App = getPdaApp(app.template);
 
-  const [settingsMode, setSettingsMode] = useLocalState(context, 'settingsMode', false);
+  const [settingsMode, setSettingsMode] = useLocalState('settingsMode', false);
 
   return (
     <Window width={580} height={670} theme={useRetro ? "pda-retro" : null} resizable>

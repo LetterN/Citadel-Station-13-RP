@@ -166,10 +166,10 @@ export const TraitorObjectiveDebug = (props, context) => {
     ));
   }
   let objectivesToRender: Objective[] = [];
-  const [currentTab, setCurrentTab] = useLocalState(context, "currentTab", "All");
-  const [sortingFunc, setSortingFunc] = useLocalState(context, "sortingFunc", sortingOptions[0].name);
+  const [currentTab, setCurrentTab] = useLocalState("currentTab", "All");
+  const [sortingFunc, setSortingFunc] = useLocalState("sortingFunc", sortingOptions[0].name);
   // true = ascending, false = descending
-  const [sortDirection, setSortingDirection] = useLocalState(context, "sortDirection", true);
+  const [sortDirection, setSortingDirection] = useLocalState("sortDirection", true);
 
   let actualSortingFunc;
   for (let index = 0; index < sortingOptions.length; index++) {

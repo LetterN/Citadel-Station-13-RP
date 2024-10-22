@@ -36,10 +36,10 @@ interface TrackingEntryContext {
 
 export const Gps = (props, context) => {
   const { act, data } = useBackend<GpsContext>(context);
-  const [addWaypointName, setAddWaypointName] = useLocalState(context, 'waypointName', "");
-  const [addWaypointX, setAddWaypointX] = useLocalState(context, 'waypointX', "");
-  const [addWaypointY, setAddWaypointY] = useLocalState(context, 'waypointY', "");
-  const [addWaypointLevel, setAddWaypointLevel] = useLocalState(context, 'waypointLevel', "");
+  const [addWaypointName, setAddWaypointName] = useLocalState('waypointName', "");
+  const [addWaypointX, setAddWaypointX] = useLocalState('waypointX', "");
+  const [addWaypointY, setAddWaypointY] = useLocalState('waypointY', "");
+  const [addWaypointLevel, setAddWaypointLevel] = useLocalState('waypointLevel', "");
   return (
     <Window
       title="Global Positioning System"

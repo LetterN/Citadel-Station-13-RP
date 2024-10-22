@@ -40,7 +40,7 @@ export const CrewMonitor = () => {
 
 export const CrewMonitorContent = (props, context) => {
   const { act, data, config } = useBackend(context);
-  const [tabIndex, setTabIndex] = useLocalState(context, 'tabIndex', 0);
+  const [tabIndex, setTabIndex] = useLocalState('tabIndex', 0);
 
   const crew = flow([
     sortBy(cm => cm.name),
@@ -49,7 +49,7 @@ export const CrewMonitorContent = (props, context) => {
     sortBy(cm => cm?.realZ),
   ])(data.crewmembers || []);
 
-  const [zoom, setZoom] = useLocalState(context, 'zoom', 1);
+  const [zoom, setZoom] = useLocalState('zoom', 1);
 
   let body;
   // Data view
@@ -157,7 +157,7 @@ export const CrewMonitorContent = (props, context) => {
 
 const CrewMonitorMapView = (props, context) => {
   const { act, config, data } = useBackend(context);
-  const [zoom, setZoom] = useLocalState(context, 'zoom', 1);
+  const [zoom, setZoom] = useLocalState('zoom', 1);
   return (
     <Box height="526px" mb="0.5rem" overflow="hidden">
       <NanoMap onZoom={v => setZoom(v)}>

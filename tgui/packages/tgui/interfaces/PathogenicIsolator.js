@@ -68,7 +68,7 @@ export const PathogenicIsolator = (props, context) => {
     isolating,
   } = data;
 
-  const [tabIndex, setTabIndex] = useLocalState(context, "tabIndex", 0);
+  const [tabIndex, setTabIndex] = useLocalState("tabIndex", 0);
 
   let tab = null;
   if (tabIndex === 0) {

@@ -59,7 +59,7 @@ export const Newscaster = (props, context) => {
 /** The modal menu that contains the prompts to making new channels. */
 const NewscasterChannelCreation = (props, context) => {
   const { act, data } = useBackend(context);
-  const [lockedmode, setLockedmode] = useLocalState(context, 'lockedmode', 1);
+  const [lockedmode, setLockedmode] = useLocalState('lockedmode', 1);
   const {
     creating_channel,
     name,

@@ -18,7 +18,7 @@ const MECHA_MAINT_PANELS = {
 };
 
 export const MaintMode = (props, context) => {
-  const [screen, setPanel] = useLocalState(context, 'screen', MECHA_MAINT_PANELS.main);
+  const [screen, setPanel] = useLocalState('screen', MECHA_MAINT_PANELS.main);
   const Component = screen.component();
   return (
     <Stack fill vertical>
@@ -42,7 +42,7 @@ export const MaintMode = (props, context) => {
 
 const MainPanel = (props, context) => {
   const { act, data } = useBackend<MaintData>(context);
-  const [screen, setPanel] = useLocalState(context, 'screen', MECHA_MAINT_PANELS.main);
+  const [screen, setPanel] = useLocalState('screen', MECHA_MAINT_PANELS.main);
   const {
     mecha_flags,
     mechflag_keys,
@@ -67,7 +67,7 @@ const MainPanel = (props, context) => {
 
 const MaintEnabled = (props, context) => {
   const { act, data } = useBackend<MaintData>(context);
-  const [screen, setPanel] = useLocalState(context, 'screen', MECHA_MAINT_PANELS.main);
+  const [screen, setPanel] = useLocalState('screen', MECHA_MAINT_PANELS.main);
   return (
     <>
       <Stack.Item>

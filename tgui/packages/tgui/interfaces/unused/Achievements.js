@@ -8,7 +8,7 @@ export const Achievements = (props, context) => {
   const [
     selectedCategory,
     setSelectedCategory,
-  ] = useLocalState(context, 'category', categories[0]);
+  ] = useLocalState('category', categories[0]);
   const achievements = data.achievements
     .filter(x => x.category === selectedCategory);
   return (
@@ -95,7 +95,7 @@ const HighScoreTable = (props, context) => {
   const [
     highScoreIndex,
     setHighScoreIndex,
-  ] = useLocalState(context, 'highscore', 0);
+  ] = useLocalState('highscore', 0);
   const highscore = highscores[highScoreIndex];
   if (!highscore) {
     return null;

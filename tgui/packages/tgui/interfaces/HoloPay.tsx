@@ -22,7 +22,7 @@ of their respective owners.`;
 export const HoloPay = (_, context) => {
   const { data } = useBackend<HoloPayData>(context);
   const { owner } = data;
-  const [setupMode, setSetupMode] = useLocalState(context, 'setupMode', false);
+  const [setupMode, setSetupMode] = useLocalState('setupMode', false);
   // User clicked the "Setup" or "Done" button.
   const onClick = () => {
     setSetupMode(!setupMode);

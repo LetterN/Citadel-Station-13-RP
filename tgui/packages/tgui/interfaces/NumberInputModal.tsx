@@ -19,7 +19,7 @@ export const NumberInputModal = (_, context) => {
   const { act, data } = useBackend<NumberInputData>(context);
   const { init_value, large_buttons, message = "", timeout, title }
     = data;
-  const [input, setInput] = useLocalState(context, 'input', init_value);
+  const [input, setInput] = useLocalState('input', init_value);
   const onChange = (value: number) => {
     if (value === input) {
       return;

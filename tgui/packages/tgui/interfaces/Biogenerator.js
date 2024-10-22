@@ -57,15 +57,15 @@ const BiogeneratorItems = (props, context) => {
   const [
     searchText,
     _setSearchText,
-  ] = useLocalState(context, 'search', '');
+  ] = useLocalState('search', '');
   const [
     sortOrder,
     _setSortOrder,
-  ] = useLocalState(context, 'sort', 'Alphabetical');
+  ] = useLocalState('sort', 'Alphabetical');
   const [
     descending,
     _setDescending,
-  ] = useLocalState(context, 'descending', false);
+  ] = useLocalState('descending', false);
   const searcher = createSearch(searchText, item => {
     return item[0];
   });
@@ -113,15 +113,15 @@ const BiogeneratorSearch = (props, context) => {
   const [
     _searchText,
     setSearchText,
-  ] = useLocalState(context, 'search', '');
+  ] = useLocalState('search', '');
   const [
     _sortOrder,
     setSortOrder,
-  ] = useLocalState(context, 'sort', '');
+  ] = useLocalState('sort', '');
   const [
     descending,
     setDescending,
-  ] = useLocalState(context, 'descending', false);
+  ] = useLocalState('descending', false);
   return (
     <Box mb="0.5rem">
       <Flex width="100%">

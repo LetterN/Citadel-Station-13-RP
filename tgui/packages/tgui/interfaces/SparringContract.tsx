@@ -58,9 +58,9 @@ export const SparringContract = (props, context) => {
     in_area,
     no_chaplains,
   } = data;
-  const [weapon, setWeapon] = useLocalState(context, "weapon", set_weapon);
-  const [area, setArea] = useLocalState(context, "area", set_area);
-  const [stakes, setStakes] = useLocalState(context, "stakes", set_stakes);
+  const [weapon, setWeapon] = useLocalState("weapon", set_weapon);
+  const [area, setArea] = useLocalState("area", set_area);
+  const [stakes, setStakes] = useLocalState("stakes", set_stakes);
   return (
     <Window
       width={420}

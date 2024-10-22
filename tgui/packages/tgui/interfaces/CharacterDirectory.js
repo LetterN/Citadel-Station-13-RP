@@ -27,7 +27,7 @@ export const CharacterDirectory = (props, context) => {
     personalTag,
   } = data;
 
-  const [overlay, setOverlay] = useLocalState(context, "overlay", null);
+  const [overlay, setOverlay] = useLocalState("overlay", null);
 
   return (
     <Window width={640} height={480} resizeable>
@@ -73,7 +73,7 @@ export const CharacterDirectory = (props, context) => {
 };
 
 const ViewCharacter = (props, context) => {
-  const [overlay, setOverlay] = useLocalState(context, "overlay", null);
+  const [overlay, setOverlay] = useLocalState("overlay", null);
 
   return (
     <Section title={overlay.name} buttons={
@@ -123,9 +123,9 @@ const CharacterDirectoryList = (props, context) => {
     directory,
   } = data;
 
-  const [sortId, _setSortId] = useLocalState(context, "sortId", "name");
-  const [sortOrder, _setSortOrder] = useLocalState(context, "sortOrder", "name");
-  const [overlay, setOverlay] = useLocalState(context, "overlay", null);
+  const [sortId, _setSortId] = useLocalState("sortId", "name");
+  const [sortOrder, _setSortOrder] = useLocalState("sortOrder", "name");
+  const [overlay, setOverlay] = useLocalState("overlay", null);
 
   return (
     <Section title="Directory" buttons={
@@ -177,8 +177,8 @@ const SortButton = (props, context) => {
   } = props;
 
   // Hey, same keys mean same data~
-  const [sortId, setSortId] = useLocalState(context, "sortId", "name");
-  const [sortOrder, setSortOrder] = useLocalState(context, "sortOrder", "name");
+  const [sortId, setSortId] = useLocalState("sortId", "name");
+  const [sortOrder, setSortOrder] = useLocalState("sortOrder", "name");
 
   return (
     <Table.Cell collapsing>

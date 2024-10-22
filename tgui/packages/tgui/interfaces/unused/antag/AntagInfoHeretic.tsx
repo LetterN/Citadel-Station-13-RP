@@ -321,7 +321,7 @@ export const AntagInfoHeretic = (props, context) => {
   const [
     currentTab,
     setTab,
-  ] = useLocalState(context, 'currentTab', 0);
+  ] = useLocalState('currentTab', 0);
 
   return (
     <Window
