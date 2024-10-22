@@ -13,9 +13,9 @@ import './styles/themes/hackerman.scss';
 import './styles/themes/malfunction.scss';
 import './styles/themes/neutral.scss';
 import './styles/themes/ntos.scss';
-// import './styles/themes/ntos_cat.scss';
-// import './styles/themes/ntos_darkmode.scss';
-// import './styles/themes/ntos_lightmode.scss';
+import './styles/themes/ntos_cat.scss';
+import './styles/themes/ntos_darkmode.scss';
+import './styles/themes/ntos_lightmode.scss';
 // import './styles/themes/ntOS95.scss';
 // import './styles/themes/ntos_synth.scss';
 // import './styles/themes/ntos_terminal.scss';
@@ -28,6 +28,7 @@ import './styles/themes/admin.scss';
 
 // cit themes
 import './styles/themes/citadel.scss';
+import './styles/themes/pda-retro.scss'; // why, we have retro
 
 import { perf } from 'common/perf';
 import { setupHotReloading } from 'tgui-dev-server/link/client.cjs';
