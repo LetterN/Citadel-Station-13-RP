@@ -19,34 +19,31 @@ SUBSYSTEM_DEF(tgui)
 
 	/// A list of UIs scheduled to process
 	var/list/current_run = list()
-	/// A list of open UIs
-	var/list/open_uis = list()
+	/// A list of all open UIs
+	var/list/all_uis = list()
 	/// A list of open UIs, grouped by src_object.
 	var/list/open_uis_by_src = list()
 	/// The HTML base used for all UIs.
 	var/basehtml
 
-/datum/controller/subsystem/tgui/PreInit(recovering)
+/datum/controller/subsystem/tgui/PreInit()
 	basehtml = file2text('tgui/public/tgui.html')
 	// Inject inline polyfills
 	var/polyfill = file2text('tgui/public/tgui-polyfill.min.js')
 	polyfill = "<script>\n[polyfill]\n</script>"
 	basehtml = replacetextEx(basehtml, "<!-- tgui:inline-polyfill -->", polyfill)
+	// HEY!! stop being lazy and use real station yr date here
+	basehtml = replacetextEx(basehtml, "<!-- tgui:nt-copyright -->", "Nanotrasen (c) 2525-[2568]")
 
 /datum/controller/subsystem/tgui/Shutdown()
 	close_all_uis()
-/* //no tguistat
-/datum/controller/subsystem/tgui/stat_entry(msg)
-	msg = "P:[length(open_uis)]"
-	return ..()
-*/
 
 /datum/controller/subsystem/tgui/stat_entry()
-	return ..() + " P:[length(open_uis)]"
+	return ..() + " P:[length(all_uis)]"
 
 /datum/controller/subsystem/tgui/fire(resumed = FALSE)
 	if(!resumed)
-		src.current_run = open_uis.Copy()
+		src.current_run = all_uis.Copy()
 	// Cache for sanic speed (lists are references anyways)
 	var/list/current_run = src.current_run
 	while(current_run.len)
@@ -54,9 +51,9 @@ SUBSYSTEM_DEF(tgui)
 		current_run.len--
 		// TODO: Move user/src_object check to process()
 		if(ui && ui.user && ui.src_object)
-			ui.process()
+			ui.process(wait * 0.1)
 		else
-			open_uis.Remove(ui)
+			ui.close(FALSE)
 		if(MC_TICK_CHECK)
 			return
 
@@ -301,7 +298,7 @@ SUBSYSTEM_DEF(tgui)
 	ui.user.tgui_open_uis |= ui
 	var/list/uis = open_uis_by_src[key]
 	uis |= ui
-	open_uis |= ui
+	all_uis |= ui
 
 /**
  * private
@@ -317,7 +314,7 @@ SUBSYSTEM_DEF(tgui)
 	if(isnull(open_uis_by_src[key]) || !istype(open_uis_by_src[key], /list))
 		return FALSE
 	// Remove it from the list of processing UIs.
-	open_uis.Remove(ui)
+	all_uis.Remove(ui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
 		ui.user.tgui_open_uis.Remove(ui)
