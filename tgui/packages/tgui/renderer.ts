@@ -1,6 +1,7 @@
 import { perf } from 'common/perf';
 import { render } from 'inferno';
 import { createLogger } from './logging';
+import { InfernoReactNode } from './misc';
 
 const logger = createLogger('renderer');
 
@@ -19,7 +20,7 @@ export const suspendRenderer = () => {
 };
 
 type CreateRenderer = <T extends unknown[] = [unknown]>(
-  getVNode?: (...args: T) => any,
+  getVNode?: (...args: T) => InfernoReactNode,
 ) => (...args: T) => void;
 
 enum Render {
@@ -32,13 +33,13 @@ export const createRenderer: CreateRenderer = (getVNode) => (...args) => {
   perf.mark(Render.Start);
   // Start rendering
   if (!reactRoot) {
-    const element = document.getElementById('react-root');
+    reactRoot = document.getElementById('react-root');
   }
   if (getVNode) {
-    render(getVNode(...args), element);
+    render(getVNode(...args), reactRoot);
   }
   else {
-    render(args[0] as any, element);
+    render(args[0] as any, reactRoot);
   }
   perf.mark(Render.Finish);
   if (suspended) {

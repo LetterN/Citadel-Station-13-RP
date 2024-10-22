@@ -206,7 +206,7 @@ const GASES = [
     name: 'Helium',
     label: 'He',
     color: 'aliceblue',
-  }
+  },
 ] as const;
 
 // Returns gas label based on gasId

@@ -1,6 +1,8 @@
 import { Component, createRef } from "inferno";
+import { InfernoPropsWithChildren } from "../misc";
 
-export class Autofocus extends Component {
+/** Used to force the window to steal focus on load. Children optional */
+export class Autofocus extends Component<InfernoPropsWithChildren> {
   ref = createRef<HTMLDivElement>();
 
   componentDidMount() {

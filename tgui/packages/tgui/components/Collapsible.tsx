@@ -4,9 +4,7 @@
  * @license MIT
  */
 
-// import { ReactNode, useState } from 'react';
-import { InfernoNode } from 'inferno';
-import { useLocalState } from '../backend';
+import { Component, InfernoNode } from 'inferno';
 
 import { Box, BoxProps } from './Box';
 import { Button } from './Button';
@@ -19,30 +17,33 @@ type Props = Partial<{
 }> &
   BoxProps;
 
-export function Collapsible(props: Props) {
-  const { children, color, title, buttons, icon, ...rest } = props;
-  // todo check if state gets reused when you have more than 1 collapsible
-  const [open, setOpen] = useLocalState('collapsibleState', props.open);
+export class Collapsible extends Component<Props, {open: boolean;}> {
+  state = {
+    open: false,
+  };
 
-  return (
-    <Box mb={1}>
-      <div className="Table">
-        <div className="Table__cell">
-          <Button
-            fluid
-            color={color}
-            icon={icon ? icon : open ? 'chevron-down' : 'chevron-right'}
-            onClick={() => setOpen(!open)}
-            {...rest}
-          >
-            {title}
-          </Button>
+  render() {
+    const { children, color, title, buttons, icon, ...rest } = this.props;
+    return (
+      <Box mb={1}>
+        <div className="Table">
+          <div className="Table__cell">
+            <Button
+              fluid
+              color={color}
+              icon={icon ? icon : this.state.open ? 'chevron-down' : 'chevron-right'}
+              onClick={() => { this.setState((prevState) => ({ open: !prevState.open })); }}
+              {...rest}
+            >
+              {title}
+            </Button>
+          </div>
+          {buttons && (
+            <div className="Table__cell Table__cell--collapsing">{buttons}</div>
+          )}
         </div>
-        {buttons && (
-          <div className="Table__cell Table__cell--collapsing">{buttons}</div>
-        )}
-      </div>
-      {open && <Box mt={1}>{children}</Box>}
-    </Box>
-  );
+        {this.state.open && <Box mt={1}>{children}</Box>}
+      </Box>
+    );
+  }
 }

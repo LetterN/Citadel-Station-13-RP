@@ -1,10 +1,13 @@
+/* eslint-disable react/no-deprecated */
+// TODO: Rewrite as an FC, remove this lint disable
 import { createPopper, Placement, VirtualElement } from '@popperjs/core';
-import { Component, findDOMfromVNode, InfernoNode, render } from 'inferno';
+import { Component, findDOMfromVNode, render } from 'inferno';
+import { InfernoReactNode } from '../misc';
 
 type TooltipProps = {
-  readonly children?: InfernoNode;
-  readonly content: InfernoNode;
-  readonly position?: Placement;
+  children?: InfernoReactNode;
+  content: InfernoReactNode;
+  position?: Placement;
 };
 
 type TooltipState = {
@@ -20,7 +23,7 @@ const DEFAULT_OPTIONS = {
   ],
 };
 
-const NULL_RECT_INTERNAL = {
+const NULL_RECT: DOMRect = {
   width: 0,
   height: 0,
   top: 0,
@@ -29,11 +32,7 @@ const NULL_RECT_INTERNAL = {
   left: 0,
   x: 0,
   y: 0,
-};
-
-const NULL_RECT = {
-  ...NULL_RECT_INTERNAL,
-  toJSON: () => JSON.stringify(NULL_RECT_INTERNAL),
+  toJSON: () => null,
 };
 
 export class Tooltip extends Component<TooltipProps, TooltipState> {
@@ -107,33 +106,28 @@ export class Tooltip extends Component<TooltipProps, TooltipState> {
       return;
     }
 
-    render(
-      <span>{this.props.content}</span>,
-      renderedTooltip,
-      () => {
-        let singletonPopper = Tooltip.singletonPopper;
-        if (singletonPopper === undefined) {
-          singletonPopper = createPopper(
-            Tooltip.virtualElement,
-            renderedTooltip!,
-            {
-              ...DEFAULT_OPTIONS,
-              placement: this.props.position || 'auto',
-            }
-          );
-
-          Tooltip.singletonPopper = singletonPopper;
-        } else {
-          singletonPopper.setOptions({
+    render(<span>{this.props.content}</span>, renderedTooltip, () => {
+      let singletonPopper = Tooltip.singletonPopper;
+      if (singletonPopper === undefined) {
+        singletonPopper = createPopper(
+          Tooltip.virtualElement,
+          renderedTooltip!,
+          {
             ...DEFAULT_OPTIONS,
             placement: this.props.position || 'auto',
-          });
+          },
+        );
 
-          singletonPopper.update();
-        }
-      },
-      this.context
-    );
+        Tooltip.singletonPopper = singletonPopper;
+      } else {
+        singletonPopper.setOptions({
+          ...DEFAULT_OPTIONS,
+          placement: this.props.position || 'auto',
+        });
+
+        singletonPopper.update();
+      }
+    });
   }
 
   componentDidUpdate() {

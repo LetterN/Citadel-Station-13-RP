@@ -30,11 +30,6 @@ $separator-color: colors.$primary !default;
   border-bottom: base.em(2px) solid $separator-color;
 }
 
-.Section__titleHolder {
-position: relative;
-padding: 0.5em;
-}
-
 .Section__titleText {
   font-size: base.em(14px);
   font-weight: bold;
@@ -45,6 +40,7 @@ padding: 0.5em;
   position: absolute;
   display: inline-block;
   right: 0.5em;
+  margin-top: base.em(-1px);
 }
 
 .Section__rest {
@@ -99,8 +95,28 @@ padding: 0.5em;
   overflow-y: hidden;
 
   & > .Section__rest > .Section__content {
-    overflow-y: auto;
+    overflow-y: scroll;
     overflow-x: hidden;
+  }
+}
+
+.Section--scrollableHorizontal {
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  & > .Section__rest > .Section__content {
+    overflow-y: hidden;
+    overflow-x: scroll;
+  }
+}
+
+.Section--scrollable.Section--scrollableHorizontal {
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  & > .Section__rest > .Section__content {
+    overflow-y: scroll;
+    overflow-x: scroll;
   }
 }
 

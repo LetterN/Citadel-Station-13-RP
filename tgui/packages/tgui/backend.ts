@@ -387,25 +387,25 @@ export const useSelector = (selector: (state: any) => any) => {
 // TODO: update since states got changed
 //* TGUI Module Backend
 
-// export interface ModuleProps {
-//   // module id, this lets it autoload from context
-//   id: string;
-//   // override props for rendering its external <Section>
-//   section?: SectionProps;
-// }
+export interface ModuleProps {
+  // module id, this lets it autoload from context
+  id: string;
+  // override props for rendering its external <Section>
+  section?: SectionProps;
+}
 
-// export interface ModuleData {
-//   $tgui: string, // module interface
-//   $ref: string, // byond ref to self
-// }
+export interface ModuleData {
+  $tgui: string, // module interface
+  $ref: string, // byond ref to self
+}
 
-// export type ModuleBackend<TData extends ModuleData> = {
-//   data: TData;
-//   act: actFunctionType;
-//   backend: Backend<{}>;
-//   // / module id if is currently embedded module, null otherwise
-//   moduleID: string | null;
-// }
+export type ModuleBackend<TData extends ModuleData> = {
+  data: TData;
+  act: actFunctionType;
+  backend: Backend<{}>;
+  // / module id if is currently embedded module, null otherwise
+  moduleID: string | null;
+}
 
 // /**
 //  * a hook for getting the module state

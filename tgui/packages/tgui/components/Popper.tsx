@@ -1,9 +1,10 @@
 import { createPopper } from '@popperjs/core';
 import { ArgumentsOf } from 'common/types';
-import { Component, findDOMfromVNode, InfernoNode, render } from 'inferno';
+import { Component, findDOMfromVNode, render } from 'inferno';
+import { InfernoReactNode } from '../misc';
 
 type PopperProps = {
-  readonly popperContent: InfernoNode;
+  readonly popperContent: InfernoReactNode;
   readonly options?: ArgumentsOf<typeof createPopper>[2];
   readonly additionalStyles?: CSSProperties;
 };

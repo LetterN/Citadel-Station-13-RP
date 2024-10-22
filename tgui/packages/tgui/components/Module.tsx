@@ -20,17 +20,15 @@
  * @license MIT
  */
 
+// this fucking sucks
 import { Component } from "inferno";
-import { ModuleProps, useBackend } from "../backend";
-import { directlyRouteComponent } from "../routes";
+import { ModuleProps } from "../backend";
 
 export class Module<T extends ModuleProps> extends Component<T, {}> {
   getChildContext() {
     let { id } = this.props;
-    let { modules } = useBackend(this.context);
-    let data = modules[id];
-    let ref = data['$src'];
-    let ui_name = data['$tgui'];
+    let ref = 'bogusref';
+    let ui_name = 'buh';
     return {
       ...this.context,
       is_module: true,
@@ -42,12 +40,13 @@ export class Module<T extends ModuleProps> extends Component<T, {}> {
   }
 
   render() {
-    let { modules } = useBackend(this.context);
-    let { id } = this.props;
-    let ui_name = modules[id]['$tgui'];
-    const Component = directlyRouteComponent(ui_name);
-    return (
-      <Component tgui_module={ui_name} />
-    );
+    // let { modules } = useBackend(this.context);
+    // let { id } = this.props;
+    // let ui_name = modules[id]['$tgui'];
+    // const Component = directlyRouteComponent(ui_name);
+    // return (
+    //   <Component tgui_module={ui_name} />
+    // );
+    return;
   }
 }
