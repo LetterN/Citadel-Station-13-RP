@@ -4,159 +4,180 @@
  * @license MIT
  */
 
-import { classes } from '../../common/react';
-import { useDispatch } from '../../common/redux';
-import { decodeHtmlEntities, toTitleCase } from '../../common/string';
-import { Component, InfernoNode } from 'inferno';
+import { classes } from 'common/react';
+import { decodeHtmlEntities, toTitleCase } from 'common/string';
+import {
+  PropsWithChildren,
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
+
 import { backendSuspendStart, useBackend } from '../backend';
+import { globalStore } from '../backend';
 import { Icon } from '../components';
 import { BoxProps } from '../components/Box';
 import { UI_DISABLED, UI_INTERACTIVE, UI_UPDATE } from '../constants';
 import { useDebug } from '../debug';
 import { toggleKitchenSink } from '../debug/actions';
-import { dragStartHandler, recallWindowGeometry, resizeStartHandler, setWindowKey } from '../drag';
+import {
+  dragStartHandler,
+  recallWindowGeometry,
+  resizeStartHandler,
+  setWindowKey,
+} from '../drag';
 import { createLogger } from '../logging';
 import { Layout } from './Layout';
 
 const logger = createLogger('Window');
 
-const DEFAULT_SIZE = [400, 600];
+const DEFAULT_SIZE: [number, number] = [400, 600];
 
-export interface WindowProps extends BoxProps{
-  className?: string,
-  theme?: string,
-  title?: string,
-  width?: number,
-  height?: number,
-  canClose?: boolean,
-  children?: InfernoNode,
-}
+type Props = Partial<{
+  buttons: ReactNode;
+  canClose: boolean;
+  height: number;
+  theme: string;
+  title: string;
+  width: number;
+}> &
+  PropsWithChildren;
 
-export class Window<T extends WindowProps> extends Component<T, {}> {
-  componentDidMount() {
-    const { suspended } = useBackend(this.context);
-    const { canClose = true } = this.props;
-    if (suspended) {
-      return;
-    }
+export const Window = (props: Props) => {
+  const {
+    canClose = true,
+    theme,
+    title,
+    children,
+    buttons,
+    width,
+    height,
+  } = props;
+
+  const { config, suspended } = useBackend();
+  const { debugLayout = false } = useDebug();
+  const [isReadyToRender, setIsReadyToRender] = useState(false);
+
+  // We need to set the window to be invisible before we can set its geometry
+  // Otherwise, we get a flicker effect when the window is first rendered
+  useLayoutEffect(() => {
     Byond.winset(Byond.windowId, {
-      'can-close': Boolean(canClose),
+      'is-visible': false,
     });
-    logger.log('mounting');
-    this.updateGeometry();
-  }
+    setIsReadyToRender(true);
+  }, []);
 
-  componentDidUpdate(prevProps) {
-    const shouldUpdateGeometry = (
-      this.props.width !== prevProps.width
-      || this.props.height !== prevProps.height
-    );
-    if (shouldUpdateGeometry) {
-      this.updateGeometry();
+  useEffect(() => {
+    if (!suspended && isReadyToRender) {
+      const updateGeometry = () => {
+        const options = {
+          ...config.window,
+          size: DEFAULT_SIZE,
+        };
+
+        if (width && height) {
+          options.size = [width, height];
+        }
+        if (config.window?.key) {
+          setWindowKey(config.window.key);
+        }
+        recallWindowGeometry(options);
+        Byond.winset(Byond.windowId, {
+          'is-visible': true,
+        });
+        logger.log('set to visible');
+      };
+
+      Byond.winset(Byond.windowId, {
+        'can-close': Boolean(canClose),
+      });
+      logger.log('mounting');
+      updateGeometry();
+
+      return () => {
+        logger.log('unmounting');
+      };
     }
-  }
+  }, [isReadyToRender, width, height]);
 
-  updateGeometry() {
-    const { config } = useBackend(this.context);
-    const size = (this.props.width && this.props.height)? [this.props.width, this.props.height] : DEFAULT_SIZE;
-    const options = {
-      ...config.window,
-      size,
-    };
+  const dispatch = globalStore.dispatch;
+  const fancy = config.window?.fancy;
 
-    if (config.window?.key) {
-      setWindowKey(config.window.key);
-    }
-    recallWindowGeometry(options);
-  }
+  // Determine when to show dimmer
+  const showDimmer =
+    config.user &&
+    (config.user.observer
+      ? config.status < UI_DISABLED
+      : config.status < UI_INTERACTIVE);
 
-  render() {
-    const {
-      canClose = true,
-      theme,
-      title,
-      children,
-      buttons,
-    } = this.props;
-    const {
-      config,
-      suspended,
-    } = useBackend(this.context);
-    const { debugLayout } = useDebug(this.context);
-    const dispatch = useDispatch(this.context);
-    const fancy = config.window?.fancy;
-    // Determine when to show dimmer
-    const showDimmer = config.user && (
-      config.user.observer
-        ? config.status < UI_DISABLED
-        : config.status < UI_INTERACTIVE
-    );
-    return (
-      <Layout
-        className="Window"
-        theme={theme}>
-        <TitleBar
-          className="Window__titleBar"
-          title={!suspended && (title || decodeHtmlEntities(config.title))}
-          status={config.status}
-          fancy={fancy}
-          onDragStart={dragStartHandler}
-          onClose={() => {
-            logger.log('pressed close');
-            dispatch(backendSuspendStart());
-          }}
-          canClose={canClose}>
-          {buttons}
-        </TitleBar>
-        <div
-          className={classes([
-            'Window__rest',
-            debugLayout && 'debug-layout',
-          ])}>
-          {!suspended && children}
-          {showDimmer && (
-            <div className="Window__dimmer" />
-          )}
-        </div>
-        {fancy && (
-          <>
-            <div className="Window__resizeHandle__e"
-              onMouseDown={resizeStartHandler(1, 0)} />
-            <div className="Window__resizeHandle__s"
-              onMouseDown={resizeStartHandler(0, 1)} />
-            <div className="Window__resizeHandle__se"
-              onMouseDown={resizeStartHandler(1, 1)} />
-          </>
-        )}
-      </Layout>
-    );
-  }
+  return suspended ? null : (
+    <Layout className="Window" theme={theme}>
+      <TitleBar
+        className="Window__titleBar"
+        title={title || decodeHtmlEntities(config.title)}
+        status={config.status}
+        fancy={fancy}
+        onDragStart={dragStartHandler}
+        onClose={() => {
+          logger.log('pressed close');
+          dispatch(backendSuspendStart());
+        }}
+        canClose={canClose}
+      >
+        {buttons}
+      </TitleBar>
+      <div className={classes(['Window__rest', debugLayout && 'debug-layout'])}>
+        {!suspended && children}
+        {showDimmer && <div className="Window__dimmer" />}
+      </div>
+      {fancy && (
+        <>
+          <div
+            className="Window__resizeHandle__e"
+            onMouseDown={resizeStartHandler(1, 0) as any}
+          />
+          <div
+            className="Window__resizeHandle__s"
+            onMouseDown={resizeStartHandler(0, 1) as any}
+          />
+          <div
+            className="Window__resizeHandle__se"
+            onMouseDown={resizeStartHandler(1, 1) as any}
+          />
+        </>
+      )}
+    </Layout>
+  );
+};
 
-  static Content = props => {
-    const {
-      className,
-      fitted,
-      children,
-      ...rest
-    } = props;
-    return (
-      <Layout.Content
-        className={classes([
-          'Window__content',
-          className,
-        ])}
-        {...rest}>
-        {fitted && children || (
-          <div className="Window__contentPadding">
-            {children}
-          </div>
-        )}
-      </Layout.Content>
-    );
-  };
-}
+type ContentProps = Partial<{
+  className: string;
+  fitted: boolean;
+  scrollable: boolean;
+  vertical: boolean;
+}> &
+  BoxProps &
+  PropsWithChildren;
 
-const statusToColor = status => {
+const WindowContent = (props: ContentProps) => {
+  const { className, fitted, children, ...rest } = props;
+
+  return (
+    <Layout.Content
+      className={classes(['Window__content', className])}
+      {...rest}
+    >
+      {(fitted && children) || (
+        <div className="Window__contentPadding">{children}</div>
+      )}
+    </Layout.Content>
+  );
+};
+
+Window.Content = WindowContent;
+
+const statusToColor = (status) => {
   switch (status) {
     case UI_INTERACTIVE:
       return 'good';
@@ -168,7 +189,18 @@ const statusToColor = status => {
   }
 };
 
-const TitleBar = (props, context) => {
+type TitleBarProps = Partial<{
+  canClose: boolean;
+  className: string;
+  fancy: boolean;
+  onClose: (e) => void;
+  onDragStart: (e) => void;
+  status: number;
+  title: string;
+}> &
+  PropsWithChildren;
+
+const TitleBar = (props: TitleBarProps) => {
   const {
     className,
     title,
@@ -179,53 +211,44 @@ const TitleBar = (props, context) => {
     onClose,
     children,
   } = props;
-  const dispatch = useDispatch(context);
+  const dispatch = globalStore.dispatch;
+
+  const finalTitle =
+    (typeof title === 'string' &&
+      title === title.toLowerCase() &&
+      toTitleCase(title)) ||
+    title;
+
   return (
-    <div
-      className={classes([
-        'TitleBar',
-        className,
-      ])}>
-      {status === undefined && (
-        <Icon
-          className="TitleBar__statusIcon"
-          name="tools"
-          opacity={0.5} />
-      ) || (
+    <div className={classes(['TitleBar', className])}>
+      {(status === undefined && (
+        <Icon className="TitleBar__statusIcon" name="tools" opacity={0.5} />
+      )) || (
         <Icon
           className="TitleBar__statusIcon"
           color={statusToColor(status)}
-          name="eye" />
+          name="eye"
+        />
       )}
       <div
         className="TitleBar__dragZone"
-        onMouseDown={e => fancy && onDragStart(e)} />
+        onMouseDown={(e) => fancy && onDragStart && onDragStart(e)}
+      />
       <div className="TitleBar__title">
-        {typeof title === 'string'
-          && title === title.toLowerCase()
-          && toTitleCase(title)
-          || title}
-        {!!children && (
-          <div className="TitleBar__buttons">
-            {children}
-          </div>
-        )}
+        {finalTitle}
+        {!!children && <div className="TitleBar__buttons">{children}</div>}
       </div>
       {process.env.NODE_ENV !== 'production' && (
         <div
           className="TitleBar__devBuildIndicator"
-          onClick={() => dispatch(toggleKitchenSink())}>
+          onClick={() => dispatch(toggleKitchenSink())}
+        >
           <Icon name="bug" />
         </div>
       )}
       {Boolean(fancy && canClose) && (
-        <div
-          className="TitleBar__close TitleBar__clickable"
-          // IE8: Synthetic onClick event doesn't work on IE8.
-          // IE8: Use a plain character instead of a unicode symbol.
-          // eslint-disable-next-line react/no-unknown-property
-          onclick={onClose}>
-          {Byond.IS_LTE_IE8 ? 'x' : '×'}
+        <div className="TitleBar__close TitleBar__clickable" onClick={onClose}>
+          ×
         </div>
       )}
     </div>
