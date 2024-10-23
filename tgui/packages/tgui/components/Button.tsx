@@ -5,78 +5,90 @@
  */
 
 import { Placement } from '@popperjs/core';
-import { KEY_ENTER, KEY_ESCAPE, KEY_SPACE } from 'common/keycodes';
-import { BooleanLike, classes, pureComponentHooks, StrictlyStringLike } from 'common/react';
-import { Component, createRef } from 'inferno';
-import { createLogger } from '../logging';
+import { isEscape, KEY } from 'common/keys';
+import { BooleanLike, classes } from 'common/react';
+import {
+  ChangeEvent,
+  createRef,
+  MouseEvent,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import { Box, BoxProps, computeBoxClassName, computeBoxProps } from './Box';
 import { Icon } from './Icon';
 import { Tooltip } from './Tooltip';
 
-const logger = createLogger('Button');
+/**
+ * Getting ellipses to work requires that you use:
+ * 1. A string rather than a node
+ * 2. A fixed width here or in a parent
+ * 3. Children prop rather than content
+ */
+type EllipsisUnion =
+  | {
+      ellipsis: true;
+      children: string;
+      /** @deprecated use children instead */
+      content?: never;
+    }
+  | Partial<{
+      ellipsis: undefined;
+      children: ReactNode;
+      /** @deprecated use children instead */
+      content: ReactNode;
+    }>;
 
-export type ButtonProps = BoxProps & {
-  readonly fluid?: BooleanLike;
-  readonly icon?: string | BooleanLike;
-  readonly iconRotation?: number;
-  readonly iconSpin?: BooleanLike;
-  readonly iconColor?: any;
-  readonly iconPosition?: 'right' | 'left';
-  readonly iconProps?: BoxProps;
-  readonly color?: string | BooleanLike;
-  readonly disabled?: BooleanLike;
-  readonly selected?: BooleanLike;
-  readonly tooltip?: StrictlyStringLike;
-  readonly tooltipPosition?: Placement;
-  readonly ellipsis?: BooleanLike;
-  readonly circular?: BooleanLike;
-  readonly content?: any;
-  readonly onClick?: any;
-  readonly verticalAlignContent?: 'top' | 'middle' | 'bottom';
-}
+type Props = Partial<{
+  captureKeys: boolean;
+  circular: boolean;
+  compact: boolean;
+  disabled: BooleanLike;
+  fluid: boolean;
+  icon: string | false;
+  iconColor: string;
+  iconPosition: string;
+  iconRotation: number;
+  iconSpin: BooleanLike;
+  onClick: (e: any) => void;
+  selected: BooleanLike;
+  tooltip: ReactNode;
+  tooltipPosition: Placement;
+  verticalAlignContent: string;
+}> &
+  EllipsisUnion &
+  BoxProps;
 
-export const Button = (props: ButtonProps) => {
+/** Clickable button. Comes with variants. Read more in the documentation. */
+export const Button = (props: Props) => {
   const {
+    captureKeys = true,
+    children,
+    circular,
     className,
+    color,
+    compact,
+    content,
+    disabled,
+    ellipsis,
     fluid,
     icon,
-    iconRotation,
-    iconSpin,
     iconColor,
     iconPosition,
-    color,
-    disabled,
+    iconRotation,
+    iconSpin,
+    onClick,
     selected,
     tooltip,
     tooltipPosition,
-    ellipsis,
-    compact,
-    circular,
-    content,
-    children,
-    onclick,
-    onClick,
     verticalAlignContent,
     ...rest
   } = props;
-  const hasContent = !!(content || children);
-  // A warning about the lowercase onclick
-  if (onclick) {
-    logger.warn(
-      `Lowercase 'onclick' is not supported on Button and lowercase`
-      + ` prop names are discouraged in general. Please use a camelCase`
-      + `'onClick' instead and read: `
-      + `https://infernojs.org/docs/guides/event-handling`);
-  }
-  rest.onClick = e => {
-    if (!disabled && onClick) {
-      onClick(e);
-    }
-  };
-  // IE8: Use "unselectable" because "user-select" doesn't work.
-  if (Byond.IS_LTE_IE8) {
-    rest.unselectable = true;
-  }
+
+  const toDisplay: ReactNode = content || children;
+
   let buttonContent = (
     <div
       className={classes([
@@ -84,41 +96,47 @@ export const Button = (props: ButtonProps) => {
         fluid && 'Button--fluid',
         disabled && 'Button--disabled',
         selected && 'Button--selected',
-        hasContent && 'Button--hasContent',
-        ellipsis && 'Button--ellipsis',
+        !!toDisplay && 'Button--hasContent',
         circular && 'Button--circular',
         compact && 'Button--compact',
         iconPosition && 'Button--iconPosition--' + iconPosition,
-        verticalAlignContent && "Button--flex",
-        (verticalAlignContent && fluid) && "Button--flex--fluid",
-        verticalAlignContent && 'Button--verticalAlignContent--' + verticalAlignContent,
-        (color && typeof color === 'string')
+        verticalAlignContent && 'Button--flex',
+        verticalAlignContent && fluid && 'Button--flex--fluid',
+        verticalAlignContent &&
+          'Button--verticalAlignContent--' + verticalAlignContent,
+        color && typeof color === 'string'
           ? 'Button--color--' + color
           : 'Button--color--default',
         className,
         computeBoxClassName(rest),
       ])}
-      tabIndex={0}
-      onKeyDown={e => {
-        if (props.captureKeys === false) {
+      tabIndex={!disabled ? 0 : undefined}
+      onClick={(event) => {
+        if (!disabled && onClick) {
+          onClick(event);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (!captureKeys) {
           return;
         }
-        const keyCode = window.event ? e.which : e.keyCode;
+
         // Simulate a click when pressing space or enter.
-        if (keyCode === KEY_SPACE || keyCode === KEY_ENTER) {
-          e.preventDefault();
+        if (event.key === KEY.Space || event.key === KEY.Enter) {
+          event.preventDefault();
           if (!disabled && onClick) {
-            onClick(e);
+            onClick(event);
           }
           return;
         }
+
         // Refocus layout on pressing escape.
-        if (keyCode === KEY_ESCAPE) {
-          e.preventDefault();
-          return;
+        if (isEscape(event.key)) {
+          event.preventDefault();
         }
       }}
-      {...computeBoxProps(rest)}>
+      {...computeBoxProps(rest)}
+    >
       <div className="Button__content">
         {icon && iconPosition !== 'right' && (
           <Icon
@@ -126,18 +144,26 @@ export const Button = (props: ButtonProps) => {
             color={iconColor}
             rotation={iconRotation}
             spin={iconSpin}
-            {...props.iconProps}
           />
         )}
-        {content}
-        {children}
+        {!ellipsis ? (
+          toDisplay
+        ) : (
+          <span
+            className={classes([
+              'Button--ellipsis',
+              icon && 'Button__textMargin',
+            ])}
+          >
+            {toDisplay}
+          </span>
+        )}
         {icon && iconPosition === 'right' && (
           <Icon
             name={icon}
             color={iconColor}
             rotation={iconRotation}
             spin={iconSpin}
-            {...props.iconProps}
           />
         )}
       </div>
@@ -146,7 +172,7 @@ export const Button = (props: ButtonProps) => {
 
   if (tooltip) {
     buttonContent = (
-      <Tooltip content={tooltip} position={tooltipPosition}>
+      <Tooltip content={tooltip} position={tooltipPosition as Placement}>
         {buttonContent}
       </Tooltip>
     );
@@ -155,200 +181,222 @@ export const Button = (props: ButtonProps) => {
   return buttonContent;
 };
 
-Button.defaultHooks = pureComponentHooks;
+type CheckProps = Partial<{
+  checked: BooleanLike;
+}> &
+  Props;
 
-interface ButtonCheckboxProps extends ButtonProps {
-  readonly checked?: BooleanLike;
-}
-
-export const ButtonCheckbox = (props: ButtonCheckboxProps) => {
+/** Visually toggles between checked and unchecked states. */
+export const ButtonCheckbox = (props: CheckProps) => {
   const { checked, ...rest } = props;
+
   return (
     <Button
       color="transparent"
       icon={checked ? 'check-square-o' : 'square-o'}
       selected={checked}
-      {...rest} />
+      {...rest}
+    />
   );
 };
 
 Button.Checkbox = ButtonCheckbox;
 
-type ButtonConfirmProps = ButtonProps & {
-  readonly confirmContent?: string;
-  readonly confirmColor?: string;
-}
+type ConfirmProps = Partial<{
+  confirmColor: string;
+  confirmContent: ReactNode;
+  confirmIcon: string;
+}> &
+  Props;
 
-type ButtonConfirmState = {
-  clicked: boolean;
-}
+/**  Requires user confirmation before triggering its action. */
+const ButtonConfirm = (props: ConfirmProps) => {
+  const {
+    children,
+    color,
+    confirmColor = 'bad',
+    confirmContent = 'Confirm?',
+    confirmIcon,
+    ellipsis = true,
+    icon,
+    onClick,
+    ...rest
+  } = props;
+  const [clickedOnce, setClickedOnce] = useState(false);
 
-export class ButtonConfirm extends Component<ButtonConfirmProps, ButtonConfirmState> {
-  state: ButtonConfirmState = {
-    clicked: false,
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!clickedOnce) {
+      setClickedOnce(true);
+      return;
+    }
+
+    onClick?.(event);
+    setClickedOnce(false);
   };
 
-  handleClick = () => {
-    if (this.state.clicked) {
-      this.setClickedOnce(false);
-    }
-  };
-
-  setClickedOnce(clickedOnce) {
-    this.setState({ clicked: clickedOnce });
-    if (clickedOnce) {
-      setTimeout(() => window.addEventListener('click', this.handleClick));
-    }
-    else {
-      window.removeEventListener('click', this.handleClick);
-    }
-  }
-
-  render() {
-    const {
-      confirmContent = "Confirm?",
-      confirmColor = "bad",
-      confirmIcon,
-      icon,
-      color,
-      content,
-      onClick,
-      ...rest
-    } = this.props;
-    return (
-      <Button
-        content={this.state.clicked ? confirmContent : content}
-        icon={this.state.clicked ? confirmIcon : icon}
-        color={this.state.clicked ? confirmColor : color}
-        onClick={(e) => this.state.clicked
-          ? onClick?.(e)
-          : this.setClickedOnce(true)}
-        {...rest}
-      />
-    );
-  }
-}
+  return (
+    <Button
+      icon={clickedOnce ? confirmIcon : icon}
+      color={clickedOnce ? confirmColor : color}
+      onClick={handleClick}
+      {...rest}
+    >
+      {clickedOnce ? confirmContent : children}
+    </Button>
+  );
+};
 
 Button.Confirm = ButtonConfirm;
 
-type ButtonInputProps = BoxProps & {
-  fluid?: BooleanLike;
-  onCommit?: (e, value) => void;
+type InputProps = Partial<{
   currentValue: string;
   defaultValue: string;
-}
+  fluid: boolean;
+  maxLength: number;
+  onCommit: (e: any, value: string) => void;
+  placeholder: string;
+}> &
+  Props;
 
-export class ButtonInput<T extends ButtonInputProps> extends Component<T, {}> {
-  inputRef: any;
-  inputting: boolean = false;
+/** Accepts and handles user input. */
+const ButtonInput = (props: InputProps) => {
+  const {
+    children,
+    color = 'default',
+    content,
+    currentValue,
+    defaultValue,
+    disabled,
+    fluid,
+    icon,
+    iconRotation,
+    iconSpin,
+    maxLength,
+    onCommit = () => null,
+    placeholder,
+    tooltip,
+    tooltipPosition,
+    ...rest
+  } = props;
+  const [inInput, setInInput] = useState(false);
+  const inputRef = createRef<HTMLInputElement>();
 
-  constructor() {
-    super();
-    this.inputRef = createRef();
-  }
+  const toDisplay = content || children;
 
-  setInInput(inInput: boolean) {
-    this.inputting = inInput;
-    if (this.inputRef) {
-      const input = this.inputRef.current;
-      if (inInput) {
-        input.value = this.props.currentValue || "";
-        try {
-          input.focus();
-          input.select();
-        }
-        catch {}
+  const commitResult = (e) => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    const hasValue = input.value !== '';
+    if (hasValue) {
+      onCommit(e, input.value);
+    } else {
+      if (defaultValue) {
+        onCommit(e, defaultValue);
       }
     }
-  }
+  };
 
-  commitResult(e) {
-    if (this.inputRef) {
-      const input = this.inputRef.current;
-      const hasValue = (input.value !== "");
-      if (hasValue) {
-        this.props.onCommit?.(e, input.value);
-        return;
-      } else {
-        if (!this.props.defaultValue) {
-          return;
-        }
-        this.props.onCommit?.(e, this.props.defaultValue);
-      }
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    if (inInput) {
+      input.value = currentValue || '';
+      try {
+        input.focus();
+        input.select();
+      } catch {}
     }
-  }
+  }, [inInput, currentValue]);
 
-  render() {
-    const {
-      fluid,
-      content,
-      icon,
-      iconRotation,
-      iconSpin,
-      tooltip,
-      tooltipPosition,
-      color = 'default',
-      placeholder,
-      maxLength,
-      ...rest
-    } = this.props;
+  let buttonContent = (
+    <Box
+      className={classes([
+        'Button',
+        fluid && 'Button--fluid',
+        'Button--color--' + color,
+      ])}
+      {...rest}
+      onClick={() => setInInput(true)}
+    >
+      {icon && <Icon name={icon} rotation={iconRotation} spin={iconSpin} />}
+      <div>{toDisplay}</div>
+      <input
+        disabled={!!disabled}
+        ref={inputRef}
+        className="NumberInput__input"
+        style={{
+          display: !inInput ? 'none' : '',
+          textAlign: 'left',
+        }}
+        onBlur={(event) => {
+          if (!inInput) {
+            return;
+          }
+          setInInput(false);
+          commitResult(event);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === KEY.Enter) {
+            setInInput(false);
+            commitResult(event);
+            return;
+          }
+          if (isEscape(event.key)) {
+            setInInput(false);
+          }
+        }}
+      />
+    </Box>
+  );
 
-    let buttonContent = (
-      <Box
-        className={classes([
-          'Button',
-          fluid && 'Button--fluid',
-          'Button--color--' + color,
-        ])}
-        {...rest}
-        onClick={() => this.setInInput(true)}>
-        {icon && (
-          <Icon name={icon} rotation={iconRotation} spin={iconSpin} />
-        )}
-        <div>
-          {content}
-        </div>
-        <input
-          ref={this.inputRef}
-          className="NumberInput__input"
-          style={{
-            'display': !this.inputting ? 'none' : undefined,
-            'text-align': 'left',
-          }}
-          onBlur={e => {
-            if (!this.inputting) {
-              return;
-            }
-            this.setInInput(false);
-            this.commitResult(e);
-          }}
-          onKeyDown={e => {
-            if (e.keyCode === KEY_ENTER) {
-              this.setInInput(false);
-              this.commitResult(e);
-              return;
-            }
-            if (e.keyCode === KEY_ESCAPE) {
-              this.setInInput(false);
-            }
-          }}
-        />
-      </Box>
+  if (tooltip) {
+    buttonContent = (
+      <Tooltip content={tooltip} position={tooltipPosition as Placement}>
+        {buttonContent}
+      </Tooltip>
     );
-
-    if (tooltip) {
-      buttonContent = (
-        <Tooltip
-          content={tooltip}
-          position={tooltipPosition}
-        >
-          {buttonContent}
-        </Tooltip>
-      );
-    }
-
-    return buttonContent;
   }
-}
+
+  return buttonContent;
+};
 
 Button.Input = ButtonInput;
+
+type FileProps = {
+  accept: string;
+  multiple?: boolean;
+  onSelectFiles: (files: FileList) => void;
+} & Props;
+
+/**  Accepts file input */
+function ButtonFile(props: FileProps) {
+  const { accept, multiple, onSelectFiles, ...rest } = props;
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (files?.length) {
+      onSelectFiles(files);
+      event.target.value = '';
+    }
+  }
+
+  return (
+    <>
+      <Button onClick={() => inputRef.current?.click()} {...rest} />
+      <input
+        hidden
+        type="file"
+        ref={inputRef}
+        accept={accept}
+        multiple={multiple}
+        onChange={handleChange}
+      />
+    </>
+  );
+}
+
+Button.File = ButtonFile;
