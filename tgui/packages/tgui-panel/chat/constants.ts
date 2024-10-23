@@ -26,13 +26,13 @@ export const MESSAGE_TYPE_LOCALCHAT = 'localchat';
 export const MESSAGE_TYPE_RADIO = 'radio';
 export const MESSAGE_TYPE_INFO = 'info';
 export const MESSAGE_TYPE_WARNING = 'warning';
-export const MESSAGE_TYPE_HELPFUL = 'helpful';
 export const MESSAGE_TYPE_DEADCHAT = 'deadchat';
 export const MESSAGE_TYPE_OOC = 'ooc';
 export const MESSAGE_TYPE_ADMINPM = 'adminpm';
 export const MESSAGE_TYPE_COMBAT = 'combat';
 export const MESSAGE_TYPE_ADMINCHAT = 'adminchat';
 export const MESSAGE_TYPE_MODCHAT = 'modchat';
+export const MESSAGE_TYPE_PRAYER = 'prayer';
 export const MESSAGE_TYPE_EVENTCHAT = 'eventchat';
 export const MESSAGE_TYPE_ADMINLOG = 'adminlog';
 export const MESSAGE_TYPE_ATTACKLOG = 'attacklog';
@@ -59,19 +59,22 @@ export const MESSAGE_TYPES = [
     type: MESSAGE_TYPE_RADIO,
     name: 'Radio',
     description: 'All departments of radio messages',
-    selector: '.alert, .minorannounce, .syndradio, .aiprivradio, .entradio, .centcomradio, .aiprivradio, .comradio, .secradio, .gangradio, .engradio, .expradio, .medradio, .sciradio, .suppradio, .servradio, .radio, .deptradio, .binarysay, .newscaster, .resonate',
+    selector:
+      '.alert, .minorannounce, .syndradio, .centcomradio, .aiprivradio, .enteradio, .comradio, .secradio, .gangradio, .engradio, .medradio, .sciradio, .suppradio, .servradio, .radio, .deptradio, .binarysay, .newscaster, .resonate, .abductor, .alien, .changeling',
   },
   {
     type: MESSAGE_TYPE_INFO,
     name: 'Info',
     description: 'Non-urgent messages from the game and items',
-    selector: '.notice:not(.pm), .adminnotice, .info, .sinister, .cult, .infoplain, .announce, .hear, .smallnotice, .holoparasite, .boldnotice',
+    selector:
+      '.notice:not(.pm), .adminnotice, .info, .sinister, .cult, .infoplain, .announce, .hear, .smallnotice, .holoparasite, .boldnotice',
   },
   {
     type: MESSAGE_TYPE_WARNING,
     name: 'Warnings',
     description: 'Urgent messages from the game and items',
-    selector: '.warning:not(.pm), .critical, .userdanger, .italics, .alertsyndie, .warningplain',
+    selector:
+      '.warning:not(.pm), .critical, .userdanger, .italics, .alertsyndie, .warningplain',
   },
   {
     type: MESSAGE_TYPE_DEADCHAT,
@@ -83,19 +86,7 @@ export const MESSAGE_TYPES = [
     type: MESSAGE_TYPE_OOC,
     name: 'OOC',
     description: 'The bluewall of global OOC messages',
-    selector: '.ooc, .adminooc',
-  },
-  {
-    type: 'looc',
-    name: 'LOOC',
-    description: 'Local OOC Chat. Less of a bluewall',
-    selector: '.filter_looc, .looc',
-  },
-  {
-    type: 'antagooc',
-    name: 'AOOC',
-    description: 'Antag OOC Chat.',
-    selector: '.filter_aooc, .antagooc',
+    selector: '.ooc, .adminooc, .adminobserverooc, .oocplain',
   },
   {
     type: MESSAGE_TYPE_ADMINPM,
@@ -108,12 +99,6 @@ export const MESSAGE_TYPES = [
     name: 'Combat Log',
     description: 'Urist McTraitor has stabbed you with a knife!',
     selector: '.danger',
-  },
-  {
-    type: MESSAGE_TYPE_HELPFUL,
-    name: 'Helpful',
-    description: 'PFC Unga Dunga starts feeding you a pill.',
-    selector: '.helpful',
   },
   {
     type: MESSAGE_TYPE_UNKNOWN,
@@ -133,6 +118,12 @@ export const MESSAGE_TYPES = [
     name: 'Mod Chat',
     description: 'MSAY messages',
     selector: '.mod_channel',
+    admin: true,
+  },
+  {
+    type: MESSAGE_TYPE_PRAYER,
+    name: 'Prayers',
+    description: 'Prayers from players',
     admin: true,
   },
   {
