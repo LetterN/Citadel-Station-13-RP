@@ -391,7 +391,7 @@ export interface ModuleProps {
   // module id, this lets it autoload from context
   id: string;
   // override props for rendering its external <Section>
-  section?: SectionProps;
+  section?: any;
 }
 
 export interface ModuleData {
@@ -401,8 +401,8 @@ export interface ModuleData {
 
 export type ModuleBackend<TData extends ModuleData> = {
   data: TData;
-  act: actFunctionType;
-  backend: Backend<{}>;
+  act: any;
+  backend: any;
   // / module id if is currently embedded module, null otherwise
   moduleID: string | null;
 }
@@ -423,7 +423,7 @@ export type ModuleBackend<TData extends ModuleData> = {
 //  * todo: bind useLocalState, useSharedState properly *somehow*
 //  *       maybe with a useModuleLocal, useModuleShared?
 //  */
-// export const useModule = <TData extends ModuleData>(context): ModuleBackend<TData> => {
+export const useModule = <TData extends ModuleData>(context): ModuleBackend<TData> => {
 //   const { is_module } = context;
 //   let backend = selectBackend<TData>(context);
 //   if (!is_module) {
@@ -441,9 +441,11 @@ export type ModuleBackend<TData extends ModuleData> = {
 //     act: constructModuleAct(context.m_id, context.m_ref),
 //     moduleID: context.m_id,
 //   };
-// };
+  // @ts-expect-error: hack
+  return useBackend();
+};
 
-// export const constructModuleAct = (id: string, ref: string): actFunctionType => {
+export const constructModuleAct = (id: string, ref: string) => {
 //   return (action: string, payload: object = {}) => {
 //     let sent = {
 //       ...payload,
@@ -460,12 +462,12 @@ export type ModuleBackend<TData extends ModuleData> = {
 //     }
 //     Byond.sendMessage('mod/' + action, sent);
 //   };
-// };
+};
 
 // /**
 //  * Extracts module data from context
 //  */
-// export const getModuleData = <TData>(context, id: string): TData => {
+export const getModuleData = <TData>(context, id: string) => {
 //   let backend = selectBackend<TData>(context);
 //   return backend.modules[id];
-// };
+};
