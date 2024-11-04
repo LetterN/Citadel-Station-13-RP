@@ -1001,8 +1001,8 @@ var/global/list/light_type_cache = list()
 
 // called when area power state changes
 /obj/machinery/light/power_change()
-	spawn(10)
-		seton(has_power())
+	SHOULD_CALL_PARENT(FALSE)
+	seton(has_power())
 
 // called when on fire
 

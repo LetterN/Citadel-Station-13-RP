@@ -369,16 +369,16 @@
 		return 1
 
 /obj/machinery/porta_turret/power_change()
+	SHOULD_CALL_PARENT(FALSE)
 	// todo: machinery/proc/on_online(), machinery/proc/on_offline()?
 	if(powered() && !is_integrity_broken())
 		ai_holder?.set_enabled(TRUE)
 		machine_stat &= ~NOPOWER
-		update_icon()
 	else
 		ai_holder?.set_enabled(FALSE)
 		spawn(rand(0, 15))
 			machine_stat |= NOPOWER
-			update_icon()
+	update_appearance()
 
 /obj/machinery/porta_turret/attackby(obj/item/I, mob/user)
 	if(machine_stat & BROKEN)

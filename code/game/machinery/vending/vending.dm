@@ -92,24 +92,32 @@
 	/// Defaults to 0, set to anything else for vendor to have logs.
 	var/has_logs = NONE
 
+	///Name of lighting mask for the vending machine
+	var/light_mask
 
 /obj/machinery/vending/Initialize(mapload)
 	. = ..()
 	wires = new(src)
-	spawn(4)
-		if(product_slogans)
-			slogan_list += splittext(product_slogans, ";")
 
-			// So not all machines speak at the exact same time.
-			// The first time this machine says something will be at slogantime + this random value,
-			// so if slogantime is 10 minutes, it will say it at somewhere between 10 and 20 minutes after the machine is crated.
-			last_slogan = world.time + rand(0, slogan_delay)
+	if(product_ads)
+		ads_list += splittext(product_ads, ";")
 
-		if(product_ads)
-			ads_list += splittext(product_ads, ";")
+	build_inventory()
 
-		build_inventory()
-		power_change()
+	slogan_list = splittext(product_slogans, ";")
+	// So not all machines speak at the exact same time.
+	// The first time this machine says something will be at slogantime + this random value,
+	// so if slogantime is 10 minutes, it will say it at somewhere between 10 and 20 minutes after the machine is crated.
+	last_slogan = world.time + rand(0, slogan_delay)
+	power_change()
+
+/obj/machinery/vending/Destroy()
+	QDEL_NULL(wires)
+	QDEL_NULL(coin)
+	for(var/datum/stored_item/vending_product/R in product_records)
+		qdel(R)
+	product_records = null
+	return ..()
 
 /**
  *  Build produdct_records from the products lists
@@ -136,16 +144,6 @@
 
 			product_records.Add(product)
 
-/obj/machinery/vending/Destroy()
-	qdel(wires)
-	wires = null
-	qdel(coin)
-	coin = null
-	for(var/datum/stored_item/vending_product/R in product_records)
-		qdel(R)
-	product_records = null
-	return ..()
-
 /obj/machinery/vending/legacy_ex_act(severity)
 	switch(severity)
 		if(1.0)
@@ -164,13 +162,45 @@
 		else
 	return
 
-/obj/machinery/vending/emag_act(var/remaining_charges, var/mob/user)
-	if(!emagged)
-		emagged = 1
-		to_chat(user, "You short out \the [src]'s product lock.")
-		return 1
+/obj/machinery/vending/emag_act(remaining_charges, mob/user)
+	if (obj_flags & OBJ_EMAGGED)
+		return FALSE
+	obj_flags |= OBJ_EMAGGED
+	emagged = TRUE // legacy emag val
+	to_chat(user, "You short out \the [src]'s product lock.")
+	return TRUE
+
+/obj/machinery/vending/interact(mob/user)
+	if(seconds_electrified && !(machine_stat & (BROKEN|NOPOWER)))
+		if(shock(user, 100))
+			return
+
+	return ..()
+
+/obj/machinery/vending/wrench_act(mob/living/user, obj/item/tool)
+	. = ..()
+	if(!panel_open)
+		return FALSE
+	if(default_unfasten_wrench(user, tool, time = 6 SECONDS))
+		unbuckle_all_mobs(TRUE)
+		return TRUE
+	return FALSE
+
+/obj/machinery/vending/screwdriver_act(mob/living/user, obj/item/attack_item)
+	if(..())
+		return TRUE
+	if(anchored)
+		default_deconstruction_screwdriver(user, icon_state, icon_state, attack_item)
+		update_appearance()
+	else
+		to_chat(user, SPAN_WARNING("You must first secure [src]."))
+	SSnanoui.update_uis(src)  // Speaker switch is on the main UI, not wires UI
 
 /obj/machinery/vending/attackby(obj/item/W, mob/user)
+	if(panel_open && is_wire_tool(W))
+		wires.Interact(user)
+		return
+
 	var/obj/item/card/id/I = W.GetID()
 
 	if(currently_vending && GLOB.vendor_account && !GLOB.vendor_account.suspended)
@@ -214,20 +244,6 @@
 	if(I || istype(W, /obj/item/spacecash))
 		attack_hand(user)
 		return
-	else if(W.is_screwdriver())
-		panel_open = !panel_open
-		to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
-		playsound(src, W.tool_sound, 50, 1)
-		cut_overlays()
-		if(panel_open)
-			add_overlay(image(icon, "[initial(icon_state)]-panel"))
-
-		SSnanoui.update_uis(src)  // Speaker switch is on the main UI, not wires UI
-		return
-	else if(istype(W, /obj/item/multitool) || W.is_wirecutter())
-		if(panel_open)
-			attack_hand(user)
-		return
 	else if(istype(W, /obj/item/coin) && premium.len > 0)
 		if(!user.attempt_insert_item_for_installation(W, src))
 			return
@@ -236,20 +252,7 @@
 		to_chat(user, "<span class='notice'>You insert \the [W] into \the [src].</span>")
 		SSnanoui.update_uis(src)
 		return
-	else if(W.is_wrench())
-		playsound(src, W.tool_sound, 100, 1)
-		if(anchored)
-			user.visible_message("[user] begins unsecuring \the [src] from the floor.", "You start unsecuring \the [src] from the floor.")
-		else
-			user.visible_message("[user] begins securing \the [src] to the floor.", "You start securing \the [src] to the floor.")
-
-		if(do_after(user, 20 * W.tool_speed))
-			if(!src) return
-			to_chat(user, "<span class='notice'>You [anchored? "un" : ""]secured \the [src]!</span>")
-			anchored = !anchored
-		return
 	else
-
 		for(var/datum/stored_item/vending_product/R in product_records)
 			if(istype(W, R.item_path) && (W.name == R.item_name))
 				stock(W, R, user)
@@ -262,6 +265,27 @@
 	.[CHARGE_DETAIL_LOCATION] = get_area(src).name
 	.[CHARGE_DETAIL_REASON] = currently_vending? "Purchase of [currently_vending.item_name]" : "Unknown"
 	.[CHARGE_DETAIL_RECIPIENT] = GLOB.vendor_account.owner_name
+
+/obj/machinery/vending/update_appearance(updates=ALL)
+	. = ..()
+	if(machine_stat & BROKEN)
+		set_light(0)
+		return
+	set_light(powered() ? MINIMUM_USEFUL_LIGHT_RANGE : 0)
+
+/obj/machinery/vending/update_icon_state()
+	if(machine_stat & BROKEN)
+		icon_state = "[initial(icon_state)]-broken"
+		return ..()
+	icon_state = "[initial(icon_state)][powered() ? null : "-off"]"
+	return ..()
+
+/obj/machinery/vending/update_overlays()
+	. = ..()
+	if(panel_open)
+		. += "[initial(icon_state)]-panel"
+	if(light_mask && !(machine_stat & BROKEN) && powered())
+		. += emissive_appearance(icon, light_mask, src)
 
 /**
  *  Add money for current purchase to the vendor account.
@@ -280,18 +304,10 @@
 	T.time = stationtime2text()
 	GLOB.vendor_account.transaction_log.Add(T)
 
-/obj/machinery/vending/attack_ai(mob/user as mob)
-	return attack_hand(user)
-
 /obj/machinery/vending/attack_hand(mob/user, datum/event_args/actor/clickchain/e_args)
 	if(machine_stat & (BROKEN|NOPOWER))
 		return
 
-	if(seconds_electrified != 0)
-		if(shock(user, 100))
-			return
-
-	wires.Interact(user)
 	nano_ui_interact(user)
 
 /**
@@ -510,8 +526,7 @@
 
 /obj/machinery/vending/process(delta_time)
 	if(machine_stat & (BROKEN|NOPOWER))
-		return
-
+		return PROCESS_KILL
 	if(!active)
 		return
 
@@ -519,37 +534,35 @@
 		seconds_electrified--
 
 	//Pitch to the people!  Really sell it!
-	if(((last_slogan + slogan_delay) <= world.time) && (slogan_list.len > 0) && (!shut_up) && prob(5))
+	if(last_slogan + slogan_delay <= world.time && slogan_list.len > 0 && !shut_up && SPT_PROB(2.5, delta_time))
 		var/slogan = pick(slogan_list)
 		speak(slogan)
 		last_slogan = world.time
 
-	if(shoot_inventory && prob(2))
+	if(shoot_inventory && SPT_PROB(1, delta_time))
 		throw_item()
 
-	return
-
+/**
+ * Speak the given message verbally
+ *
+ * Checks if the machine is powered and the message exists
+ *
+ * Arguments:
+ * * message - the message to speak
+ */
 /obj/machinery/vending/proc/speak(message)
-	if(machine_stat & NOPOWER)
+	if(machine_stat & (BROKEN|NOPOWER))
 		return
-
 	if(!message)
 		return
 
 	for(var/mob/O in hearers(src, null))
 		O.show_message("<span class='game say'><span class='name'>\The [src]</span> beeps, \"[message]\"</span>",2)
-	return
 
 /obj/machinery/vending/power_change()
-	..()
-	if(machine_stat & BROKEN)
-		icon_state = "[initial(icon_state)]-broken"
-	else
-		if(!(machine_stat & NOPOWER))
-			icon_state = initial(icon_state)
-		else
-			spawn(rand(0, 15))
-				icon_state = "[initial(icon_state)]-off"
+	. = ..()
+	if(powered())
+		START_MACHINE_PROCESSING(src)
 
 //Oh no we're malfunctioning!  Dump out some product and break.
 /obj/machinery/vending/proc/malfunction()

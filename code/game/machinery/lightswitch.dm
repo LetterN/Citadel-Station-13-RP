@@ -63,13 +63,10 @@
 	area.power_change()
 
 /obj/machinery/light_switch/power_change()
-	if(!otherarea)
-		if(powered(LIGHT))
-			machine_stat &= ~NOPOWER
-		else
-			machine_stat |= NOPOWER
-
-		updateicon()
+	SHOULD_CALL_PARENT(FALSE)
+	// its a lightswitch why does it need power to operate it
+	if(area == get_area(src))
+		return ..()
 
 /obj/machinery/light_switch/emp_act(severity)
 	if(machine_stat & (BROKEN|NOPOWER))

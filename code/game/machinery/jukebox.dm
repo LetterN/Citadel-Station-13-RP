@@ -133,14 +133,9 @@
 	return ..()
 
 /obj/machinery/media/jukebox/power_change()
-	if(!powered(power_channel) || !anchored)
-		machine_stat |= NOPOWER
-	else
-		machine_stat &= ~NOPOWER
-
-	if(machine_stat & (NOPOWER|BROKEN) && playing)
+	. = ..()
+	if((machine_stat & (NOPOWER|BROKEN)) && playing)
 		StopPlaying()
-	update_icon()
 
 /obj/machinery/media/jukebox/update_icon()
 	cut_overlays()

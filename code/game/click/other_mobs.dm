@@ -55,8 +55,8 @@
 
 //Return a non FALSE value to cancel whatever called this from propagating, if it respects it.
 /atom/proc/_try_interact(mob/user)
-	// if(isAdminGhostAI(user))		//admin abuse
-	// 	return interact(user)
+	if(isAdminGhostAI(user))		//admin abuse
+		return interact(user)
 	if(can_interact(user))
 		return interact(user)
 	return FALSE
@@ -88,9 +88,7 @@
 		add_hiddenprint(user)
 	else
 		add_fingerprint(user)
-	// if(interaction_flags_atom & INTERACT_ATOM_UI_INTERACT)
 	return (ui_interact(user) || nano_ui_interact(user))
-	// return FALSE
 
 /mob/living/carbon/human/RestrainedClickOn(var/atom/A)
 	return

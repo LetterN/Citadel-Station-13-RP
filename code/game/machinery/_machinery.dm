@@ -161,6 +161,10 @@
 
 	var/interaction_flags_machine = INTERACT_MACHINE_WIRES_IF_OPEN | INTERACT_MACHINE_ALLOW_SILICON | INTERACT_MACHINE_OPEN_SILICON | INTERACT_MACHINE_SET_MACHINE
 
+	/// What was our power state the last time we updated its appearance?
+	/// TRUE for on, FALSE for off, -1 for never checked
+	var/appearance_power_state = -1
+
 // todo: from_frame? arg for frame to pass in context..
 /obj/machinery/Initialize(mapload, newdir)
 	if(newdir)
@@ -445,42 +449,45 @@
 	power_change()
 	update_appearance()
 
-// Default behavior for wrenching down machines.  Supports both delay and instant modes.
-/obj/machinery/proc/default_unfasten_wrench(var/mob/user, var/obj/item/W, var/time = 0)
-	if(!W.is_wrench())
+/// Try to unwrench an object in a WONDERFUL DYNAMIC WAY
+/obj/machinery/proc/default_unfasten_wrench(mob/user, obj/item/wrench, time = 2 SECONDS)
+	if(!wrench.is_wrench())
 		return FALSE
-	if(panel_open)
-		return FALSE // Close panel first!
-	playsound(loc, W.tool_sound, 50, 1)
-	var/actual_time = W.tool_speed * time
+
+	var/turf/ground = get_turf(src)
+	if(!anchored && is_blocked_turf(ground))
+		to_chat(user, SPAN_NOTICE("You fail to secure [src]."))
+		return FALSE
+	playsound(loc, wrench.tool_sound, 50, TRUE)
+
+	var/actual_time = wrench.tool_speed * time
 	if(actual_time != 0)
 		user.visible_message( \
-			"<span class='warning'>\The [user] begins [anchored ? "un" : ""]securing \the [src].</span>", \
-			"<span class='notice'>You start [anchored ? "un" : ""]securing \the [src].</span>")
+			"<span class='warning'>\The [user] begins [anchored ? "un" : ""]securing [src].</span>", \
+			"<span class='notice'>You begin [anchored ? "un" : ""]securing [src].</span>")
 	if(actual_time == 0 || do_after(user, actual_time, target = src))
 		user.visible_message( \
-			"<span class='warning'>\The [user] has [anchored ? "un" : ""]secured \the [src].</span>", \
-			"<span class='notice'>You [anchored ? "un" : ""]secure \the [src].</span>")
-		anchored = !anchored
-		power_change() //Turn on or off the machine depending on the status of power in the new area.
-		update_appearance()
+			"<span class='warning'>\The [user] has [anchored ? "un" : ""]secured [src].</span>", \
+			"<span class='notice'>You [anchored ? "un" : ""]secure [src].</span>")
+		set_anchored(!anchored)
+
 	return TRUE
 
-/obj/machinery/proc/default_deconstruction_crowbar(var/mob/user, var/obj/item/C)
-	if(!C.is_crowbar())
-		return 0
-	if(!panel_open)
-		return 0
-	. = dismantle()
+/obj/machinery/proc/default_deconstruction_crowbar(mob/user, obj/item/crowbar, ignore_panel = FALSE, custom_deconstruct = FALSE)
+	. = (panel_open || ignore_panel) && !crowbar.is_crowbar()
+	if(!. || custom_deconstruct)
+		return
+	deconstruct(ATOM_DECONSTRUCT_DISASSEMBLED)
 
-/obj/machinery/proc/default_deconstruction_screwdriver(var/mob/user, var/obj/item/S)
-	if(!S.is_screwdriver())
-		return 0
-	playsound(src, S.tool_sound, 50, 1)
+/obj/machinery/proc/default_deconstruction_screwdriver(mob/user, obj/item/screwdriver)
+	if(!screwdriver.is_screwdriver())
+		return FALSE
+
+	playsound(src, screwdriver.tool_sound, 50, 1)
 	panel_open = !panel_open
 	to_chat(user, "<span class='notice'>You [panel_open ? "open" : "close"] the maintenance hatch of [src].</span>")
 	update_appearance()
-	return 1
+	return TRUE
 
 /obj/machinery/proc/computer_deconstruction_screwdriver(var/mob/user, var/obj/item/S)
 	if(!S.is_screwdriver())

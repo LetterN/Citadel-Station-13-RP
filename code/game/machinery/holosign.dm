@@ -28,10 +28,10 @@
 		icon_state = on_icon
 
 /obj/machinery/holosign/power_change()
+	. = ..()
 	if(machine_stat & NOPOWER)
 		lit = 0
 		update_use_power(USE_POWER_OFF)
-	update_icon()
 
 /obj/machinery/holosign/surgery
 	name = "surgery holosign"

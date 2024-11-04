@@ -809,6 +809,8 @@
 		return
 	. = anchored
 	anchored = anchorvalue
+	if(anchored && pulledby)
+		pulledby.stop_pulling()
 	SEND_SIGNAL(src, COMSIG_MOVABLE_SET_ANCHORED, anchorvalue)
 
 //? Pass Flags

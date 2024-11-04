@@ -202,9 +202,6 @@
 	else
 		return attack_hand(user)
 
-/obj/machinery/body_scanconsole/power_change()
-	update_icon() //Health display for consoles with light and such.
-
 /obj/machinery/body_scanconsole/legacy_ex_act(severity)
 	switch(severity)
 		if(1.0)

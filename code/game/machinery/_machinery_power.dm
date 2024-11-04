@@ -21,56 +21,87 @@
 
 // returns true if the area has power on given channel (or doesn't require power).
 // defaults to power_channel
-/obj/machinery/proc/powered(var/chan = CURRENT_CHANNEL) // defaults to power_channel
-	//Don't do this. It allows machines that set use_power to 0 when off (many machines) to
-	//be turned on again and used after a power failure because they never gain the NOPOWER flag.
-	//if(!use_power)
-	//	return 1
+/obj/machinery/proc/powered(chan = power_channel, ignore_use_power = FALSE)
+	// if(!use_power && !ignore_use_power)
+	// 	return TRUE
 
-	var/area/A = get_area(src)		// make sure it's in an area
+	var/area/A = get_area(src) // make sure it's in an area
 	if(!A)
-		return 0					// if not, then not powered
-	if(chan == CURRENT_CHANNEL)
-		chan = power_channel
+		return FALSE // if not, then not powered
+
 	return A.powered(chan)			// return power status of the area
 
-// called whenever the power settings of the containing area change
-// by default, check equipment channel & set/clear NOPOWER flag
-// Returns TRUE if NOPOWER machine_stat flag changed.
-// can override if needed
+/**
+ * Called whenever the power settings of the containing area change
+ *
+ * by default, check equipment channel & set flag, can override if needed
+ *
+ * Returns TRUE if the NOPOWER flag was toggled
+ */
 /obj/machinery/proc/power_change()
-	var/oldstat = machine_stat
+	SIGNAL_HANDLER
+	SHOULD_CALL_PARENT(TRUE)
+
+	if(machine_stat & BROKEN)
+		update_appearance()
+		return
+
+	var/initial_stat = machine_stat
 	if(powered(power_channel))
 		machine_stat &= ~NOPOWER
+		if(initial_stat & NOPOWER)
+			. = TRUE
 	else
 		machine_stat |= NOPOWER
-	return (machine_stat != oldstat)
+		if(!(initial_stat & NOPOWER))
+			. = TRUE
+
+	if(appearance_power_state != (machine_stat & NOPOWER))
+		update_appearance()
+
+// Saves like 300ms of init by not duping calls in the above proc
+/obj/machinery/update_appearance(updates)
+	. = ..()
+	appearance_power_state = machine_stat & NOPOWER
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!
 /obj/machinery/proc/get_power_usage()
 	return POWER_CONSUMPTION
 
 // DEPRECATED! - USE use_power_oneoff() instead!
-/obj/machinery/proc/use_power(var/amount, var/chan = -1) // defaults to power_channel
+/obj/machinery/proc/use_power(amount, chan = power_channel)
 	return src.use_power_oneoff(amount, chan);
 
-// This will have this machine have its area eat this much power next tick, and not afterwards. Do not use for continued power draw.
-// Returns actual amount drawn (In theory this could be less than the amount asked for. In pratice it won't be FOR NOW)
-/obj/machinery/proc/use_power_oneoff(var/amount, var/chan = CURRENT_CHANNEL)
-	var/area/A = get_area(src)		// make sure it's in an area
-	if(!A)
-		return
-	if(chan == CURRENT_CHANNEL)
-		chan = power_channel
-	return A.use_power_oneoff(amount, chan)
+/**
+ * Draws energy from the APC "once".
+ * Args:
+ * - amount: The amount of energy to use.
+ * - channel: The power channel to use.
+ * Returns: The amount of energy used.
+ */
+/obj/machinery/proc/use_power_oneoff(amount, chan = power_channel)
+	if(amount <= 0) //just in case
+		return FALSE
+	var/area/home = get_area(src)		// make sure it's in an area
+	if(isnull(home))
+		return FALSE //apparently space isn't an area
+	if(!home.requires_power)
+		return amount //Shuttles get free power, don't ask why
+
+	// the apc isnt running, we cant pull
+	var/obj/machinery/power/apc/local_apc = home.apc
+	if(isnull(local_apc) || !local_apc.operating)
+		return FALSE
+
+	return home.use_power_oneoff(amount, chan)
 
 // Check if we CAN use a given amount of extra power as a one off. Returns amount we could use without actually using it.
 // For backwards compatibilty this returns true if the channel is powered. This is consistant with pre-static-power
 // behavior of APC powerd machines, but at some point we might want to make this a bit cooler.
-/obj/machinery/proc/can_use_power_oneoff(var/amount, var/chan = CURRENT_CHANNEL)
+/obj/machinery/proc/can_use_power_oneoff(amount, chan = power_channel)
 	if(powered(chan))
 		return amount // If channel is powered then you can do it.
-	return 0
+	return FALSE
 
 // Do not do power stuff in New/Initialize until after ..()
 /obj/machinery/Initialize(mapload)
@@ -85,7 +116,7 @@
 		UnregisterSignal(loc, COMSIG_MOVABLE_MOVED)
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(power, 0)
-	. = ..()
+	return ..()
 
 // Registering moved_event observers for all machines is too expensive.  Instead we do it ourselves.
 // 99% of machines are always on a turf anyway, very few need recursive move handling.
