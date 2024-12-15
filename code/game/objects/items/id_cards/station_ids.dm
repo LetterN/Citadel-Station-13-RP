@@ -81,6 +81,7 @@
 
 /obj/item/card/id/update_name()
 	name = "[registered_name? "[registered_name]'s " : ""]ID Card [assignment? "([assignment])" : ""]"
+	return ..()
 
 /**
  * Sets our registered name

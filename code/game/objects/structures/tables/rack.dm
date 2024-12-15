@@ -23,7 +23,7 @@
 	return
 
 /obj/structure/table/rack/update_desc()
-	return
+	return ..()
 
 /obj/structure/table/rack/update_icon()
 	if(!isnull(material_base))

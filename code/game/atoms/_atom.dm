@@ -170,9 +170,6 @@
 	/// vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays.
 	/// * this variable is not visible and should not be edited in the map editor.
 	var/tmp/list/managed_vis_overlays
-	/// overlays managed by [update_overlays][/atom/proc/update_overlays] to prevent removing overlays that weren't added by the same proc. Single items are stored on their own, not in a list.
-	/// * this variable is not visible and should not be edited in the map editor.
-	var/tmp/list/managed_overlays
 
 	//? Layers
 	/// Base layer - defaults to layer.
