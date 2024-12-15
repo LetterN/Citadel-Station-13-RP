@@ -24,11 +24,15 @@
 	else
 		return allowed(B)
 
-/obj/machinery/turnstile/CanPass(atom/movable/AM, turf/T)
-	if(ismob(AM))
-		var/mob/B = AM
-		if(isliving(AM))
-			var/mob/living/M = AM
+/obj/machinery/turnstile/CanAllowThrough(atom/movable/mover, border_dir)
+	. = ..()
+	if (!.)
+		return
+
+	if(ismob(mover))
+		var/mob/B = mover
+		if(isliving(mover))
+			var/mob/living/M = mover
 
 			if(world.time - M.last_bumped <= 5)
 				return FALSE
@@ -48,15 +52,16 @@
 			if(allowed_access)
 				flick("operate", src)
 				playsound(src,'sound/items/ratchet.ogg',50,0,3)
-				return TRUE
+				return
 			else
 				flick("deny", src)
 				playsound(src,'sound/machines/deniedbeep.ogg',50,0,3)
 				return FALSE
-	if(ispath(AM, /obj/item/))
-		return TRUE
-	else
-		return FALSE
+
+	if(ispath(mover, /obj/item))
+		return
+
+	return FALSE
 
 /obj/machinery/turnstile/CheckExit(atom/movable/AM as mob|obj, target)
 	if(isliving(AM))

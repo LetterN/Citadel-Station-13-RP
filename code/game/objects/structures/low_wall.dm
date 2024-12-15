@@ -101,12 +101,6 @@ GLOBAL_LIST_INIT(wallframe_typecache, typecacheof(list(
 
 	return ..()
 
-/obj/structure/wall_frame/CanAllowThrough(atom/movable/mover, turf/target)
-	if(istype(mover,/obj/projectile))
-		return TRUE
-	if(istype(mover) && mover.check_pass_flags(ATOM_PASS_TABLE))
-		return TRUE
-
 /obj/structure/wall_frame/attackby(var/obj/item/I, var/mob/user)
 	//grille placing
 	if(istype(I, /obj/item/stack/rods))
