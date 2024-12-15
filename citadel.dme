@@ -542,7 +542,6 @@
 #include "code\controllers\configuration\entries\urls.dm"
 #include "code\controllers\configuration_old\configuration.dm"
 #include "code\controllers\configuration_old\configuration_vr.dm"
-#include "code\controllers\observer_listener\atom\observer.dm"
 #include "code\controllers\repository\designs.dm"
 #include "code\controllers\repository\flooring.dm"
 #include "code\controllers\repository\guidebook.dm"
