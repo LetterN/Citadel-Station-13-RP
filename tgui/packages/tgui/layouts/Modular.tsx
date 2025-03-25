@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { BooleanLike } from "common/react";
 import { InfernoNode } from "inferno";
 import { Section } from "../components";
 import { SectionProps } from "../components/Section";
@@ -14,7 +13,7 @@ export interface ModularProps {
   readonly children?: InfernoNode;
   readonly window?: WindowProps;
   readonly section?: SectionProps;
-  readonly scrollable?: BooleanLike;
+  readonly scrollable?: boolean;
 }
 
 /**
