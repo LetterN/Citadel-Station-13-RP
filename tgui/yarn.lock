@@ -8751,7 +8751,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest@npm:29.7.0":
+"jest@npm:29.7.0, jest@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest@npm:29.7.0"
   dependencies:
@@ -12036,6 +12036,7 @@ __metadata:
     dompurify: "npm:^3.2.4"
     inferno: "npm:^7.4.8"
     inferno-vnode-flags: "npm:^7.4.8"
+    jest: "npm:^29.7.0"
     js-yaml: "npm:^4.1.0"
     marked: "npm:^4.0.10"
     tgui-dev-server: "workspace:*"

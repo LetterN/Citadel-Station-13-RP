@@ -259,7 +259,7 @@ export class ButtonInput<T extends ButtonInputProps> extends Component<T, {}> {
           input.focus();
           input.select();
         }
-        catch {}
+        catch { }
       }
     }
   }

@@ -209,7 +209,6 @@ export const SettingsGeneral = (props, context) => {
             accept=".json"
             tooltip="Import chat settings"
             icon="arrow-up-from-bracket"
-            // @ts-expect-error file momento
             onSelectFiles={(files) => importChatSettings(context, files)}
           >
             Import settings
