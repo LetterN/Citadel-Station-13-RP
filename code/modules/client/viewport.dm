@@ -8,7 +8,7 @@
 /client/proc/change_view(new_size, forced, translocate)
 	set waitfor = FALSE	// to async temporary view
 	// todo: refactor this, client view changes should be ephemeral.
-	var/list/L = decode_view_size(new_size)
+	var/list/L = getviewsize(new_size)
 	set_temporary_view(L[1], L[2])
 
 /**

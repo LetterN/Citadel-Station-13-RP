@@ -11,6 +11,8 @@
 /atom/movable/screen/movable
 	var/snap2grid = FALSE
 	var/moved = FALSE
+	var/x_off = -16
+	var/y_off = -16
 
 //Snap Screen Object
 //Tied to the grid, snaps to the nearest turf
@@ -19,32 +21,29 @@
 	snap2grid = TRUE
 
 
-/atom/movable/screen/movable/OnMouseDropLegacy(over_object, src_location, over_location, src_control, over_control, params)
-	var/list/PM = params2list(params)
-
-	//No screen-loc information? abort.
-	if(!PM || !PM["screen-loc"])
+/atom/movable/screen/movable/mouse_drop_dragged(atom/over, mob/user, src_location, over_location, params)
+	var/position = mouse_params_to_position(params)
+	if(!position)
 		return
 
-	//Split screen-loc up into X+Pixel_X and Y+Pixel_Y
-	var/list/screen_loc_params = splittext(PM["screen-loc"], ",")
+	screen_loc = position
 
-	//Split X+Pixel_X up into list(X, Pixel_X)
-	var/list/screen_loc_X = splittext(screen_loc_params[1],":")
-	screen_loc_X[1] = encode_screen_X(text2num(screen_loc_X[1]))
-	//Split Y+Pixel_Y up into list(Y, Pixel_Y)
-	var/list/screen_loc_Y = splittext(screen_loc_params[2],":")
-	screen_loc_Y[1] = encode_screen_Y(text2num(screen_loc_Y[1]))
+/// Takes mouse parmas as input, returns a string representing the appropriate mouse position
+/atom/movable/screen/movable/proc/mouse_params_to_position(params)
+	var/list/modifiers = params2list(params)
 
+	//No screen-loc information? abort.
+	if(!LAZYACCESS(modifiers, "screen-loc"))
+		return
+	var/client/our_client = usr.client
+	var/list/offset	= screen_loc_to_offset(LAZYACCESS(modifiers, "screen-loc"))
 	if(snap2grid) //Discard Pixel Values
-		screen_loc = "[screen_loc_X[1]],[screen_loc_Y[1]]"
-
+		offset[1] = FLOOR(offset[1], world.icon_size) // drops any pixel offset
+		offset[2] = FLOOR(offset[2], world.icon_size) // drops any pixel offset
 	else //Normalise Pixel Values (So the object drops at the center of the mouse, not 16 pixels off)
-		var/pix_X = text2num(screen_loc_X[2]) - 16
-		var/pix_Y = text2num(screen_loc_Y[2]) - 16
-		screen_loc = "[screen_loc_X[1]]:[pix_X],[screen_loc_Y[1]]:[pix_Y]"
-
-	moved = TRUE
+		offset[1] += x_off
+		offset[2] += y_off
+	return offset_to_screen_loc(offset[1], offset[2], our_client?.view)
 
 /atom/movable/screen/movable/proc/encode_screen_X(X)
 	var/view_dist = world.view

@@ -20,35 +20,26 @@
 /obj/structure/bed/chair/LateInitialize()
 	update_layer()
 
-/obj/structure/bed/chair/OnMouseDrop(atom/over, mob/user)
-	. = ..()
-	if(. & CLICKCHAIN_DO_NOT_PROPAGATE)
+/obj/structure/bed/chair/mouse_drop_dragged(atom/over_object, mob/user, src_location, over_location, params)
+	if(!isliving(user) || over_object != user)
 		return
-	if(!user.has_hands())
+	if(!picked_up_item || has_buckled_mobs())
 		return
-	if(!picked_up_item)
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	if(over != user) // they're not dragging us to them
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	if(!IS_CONSCIOUS(user)) // todo: mobility flags
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	if(!Adjacent(over, FALSE)) // they're not adjacent
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	if(has_buckled_mobs())
-		to_chat(user, SPAN_NOTICE("You cannot fold the chair while someone is buckled to it!"))
-		return CLICKCHAIN_DO_NOT_PROPAGATE
+	if(obj_flags & OBJ_HOLOGRAM)
+		to_chat(user, SPAN_NOTICE("You try to pick up \the [src], but it fades away!"))
+		qdel(src)
+		return
 	if(stacked_size)
 		to_chat(user, SPAN_NOTICE("You cannot fold a chair while its stacked!"))
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	var/obj/item/material/twohanded/folded_metal_chair/C = new picked_up_item
-	if(!user.put_in_hands(C))
-		to_chat(user, SPAN_NOTICE("You need a free hand to fold up the chair."))
-		qdel(C)
-		return CLICKCHAIN_DO_NOT_PROPAGATE
-	to_chat(user, SPAN_NOTICE("You fold up the chair."))
+		return
+
+	user.visible_message(SPAN_NOTICE("[user] grabs \the [src.name]."), SPAN_NOTICE("You grab \the [src.name]."))
+	var/obj/item/material/twohanded/folded_metal_chair/chair_item = new picked_up_item(loc)
+	TransferComponents(chair_item)
+	chair_item.adjust_integrity(integrity)
+	user.put_in_hands(chair_item)
 	playsound(src, 'sound/machines/crate_close.ogg', 20, 1)
 	qdel(src)
-	return CLICKCHAIN_DO_NOT_PROPAGATE
 
 /obj/structure/bed/chair/attack_hand(mob/user, datum/event_args/actor/clickchain/e_args)
 	if(!stacked_size)

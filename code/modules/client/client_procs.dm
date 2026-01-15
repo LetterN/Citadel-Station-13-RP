@@ -462,18 +462,30 @@
 
 /client/Click(atom/object, atom/location, control, params)
 	var/ab = FALSE
-	var/list/L = params2list(params)
-	if (object && object == middragatom && L["left"])
+	var/list/modifiers = params2list(params)
+
+	var/button_clicked = LAZYACCESS(modifiers, "button")
+
+	var/dragged = LAZYACCESS(modifiers, "drag")
+	if(dragged && button_clicked != dragged)
+		return
+
+	if (object && IS_WEAKREF_OF(object, middle_drag_atom_ref) && button_clicked == "left")
 		ab = max(0, 5 SECONDS-(world.time-middragtime)*0.1)
+
 	var/mcl = config_legacy.minute_click_limit		//CONFIG_GET(number/minute_click_limit)
 	if (!holder && mcl)
 		var/minute = round(world.time, 600)
+
 		if (!clicklimiter)
 			clicklimiter = new(LIMITER_SIZE)
+
 		if (minute != clicklimiter[CURRENT_MINUTE])
 			clicklimiter[CURRENT_MINUTE] = minute
 			clicklimiter[MINUTE_COUNT] = 0
-		clicklimiter[MINUTE_COUNT] += 1+(ab)
+
+		clicklimiter[MINUTE_COUNT] += 1 + (ab)
+
 		if (clicklimiter[MINUTE_COUNT] > mcl)
 			var/msg = "Your previous click was ignored because you've done too many in a minute."
 			if (minute != clicklimiter[ADMINSWARNED_AT]) //only one admin message per-minute. (if they spam the admins can just boot/ban them)
@@ -482,13 +494,13 @@
 				msg += " Administrators have been informed."
 				if (ab)
 					log_game("[key_name(src)] is using the middle click aimbot exploit")
-					message_admins("[ADMIN_LOOKUPFLW(src)] [ADMIN_KICK(usr)] is using the middle click aimbot exploit")
+					message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] is using the middle click aimbot exploit")
 					add_system_note("aimbot", "Is using the middle click aimbot exploit")
-					log_click("DROPPED: [ckey] middle click aimbot on [middragatom]:[object]")
+					log_click("DROPPED: [ckey] middle click aimbot on [middle_drag_atom_ref.resolve()]:[object]")
 
 				log_game("[key_name(src)] Has hit the per-minute click limit of [mcl] clicks in a given game minute")
-				message_admins("[ADMIN_LOOKUPFLW(src)] [ADMIN_KICK(usr)] Has hit the per-minute click limit of [mcl] clicks in a given game minute")
-			to_chat(src, "<span class='danger'>[msg]</span>")
+				message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute click limit of [mcl] clicks in a given game minute")
+			to_chat(src, SPAN_DANGER("[msg]"))
 			return
 
 	var/scl = config_legacy.second_click_limit		//CONFIG_GET(number/second_click_limit)
@@ -501,7 +513,7 @@
 			clicklimiter[SECOND_COUNT] = 0
 		clicklimiter[SECOND_COUNT] += 1+(!!ab)
 		if (clicklimiter[SECOND_COUNT] > scl)
-			to_chat(src, "<span class='danger'>Your previous click was ignored because you've done too many in a second</span>")
+			to_chat(src, SPAN_DANGER("Your previous click was ignored because you've done too many in a second"))
 			return
 
 	if(ab) //Citadel edit, things with stuff.

@@ -116,26 +116,27 @@
 	filling_overlay.color = target_reagents.get_color()
 	. += filling_overlay
 
-/obj/machinery/iv_drip/OnMouseDropLegacy(mob/living/target)
-	. = ..()
-	if(!ishuman(usr) || !usr.canUseTopic(src, be_close = TRUE) || !isliving(target))
+/obj/machinery/iv_drip/mouse_drop_dragged(atom/target, mob/user)
+	if(!isliving(user))
+		to_chat(user, SPAN_WARNING("You can't do that!"))
 		return
-
+	if(!get_reagent_holder())
+		to_chat(user, SPAN_WARNING("There's nothing attached to the IV drip!"))
+		return
 	if(attached_victim)
 		visible_message(SPAN_WARNING("[attached_victim] is detached from [src]."))
 		attached_victim = null
-		update_appearance()
+		update_appearance(UPDATE_ICON)
 		return
 
-	if(!target.has_dna())
-		to_chat(usr, SPAN_DANGER("The drip beeps: Warning, incompatible creature!"))
-		return
+	if(ismob(target))
+		var/mob/mob_target = target
+		if(!mob_target.has_dna())
+			to_chat(usr, SPAN_DANGER("The drip beeps: Warning, incompatible creature!"))
+			return
 
-	if(Adjacent(target) && usr.Adjacent(target))
-		if(get_reagent_holder())
-			attach_iv(target, usr)
-		else
-			to_chat(usr, SPAN_WARNING("There's nothing attached to the IV drip!"))
+	user.visible_message(SPAN_WARNING("[user] attaches [src] to [target]."), SPAN_NOTICE("You attach [src] to [target]."))
+	attach_iv(target, user)
 
 /obj/machinery/iv_drip/attackby(obj/item/W, mob/user, params)
 	if(is_type_in_typecache(W, drip_containers))

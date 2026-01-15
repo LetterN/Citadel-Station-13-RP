@@ -83,7 +83,7 @@
 		var/mob/living/L = user
 		L.looking_elsewhere = 1
 		L.handle_vision()
-	var/list/view_size = decode_view_size(world.view)
+	var/list/view_size = getviewsize(world.view)
 	user.client?.set_temporary_view(view_size[1] + extra_view, view_size[2] + extra_view)
 
 /obj/machinery/computer/ship/proc/unlook(mob/user, vis_update)

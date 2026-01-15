@@ -45,6 +45,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/storage/item)
 /atom/movable/screen/storage/item/proc/item_mouse_exit(mob/user)
 	layer = HUD_ITEM_LAYER_BASE
 
+// i am forwarding this call
 /atom/movable/screen/storage/item/MouseDrop(atom/over_object, src_location, over_location, src_control, over_control, params)
 	return item?.MouseDrop(arglist(args))
 

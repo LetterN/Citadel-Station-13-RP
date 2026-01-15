@@ -179,7 +179,7 @@
 	var/atom/movable/screen/storage/panel/slot/boxes/boxes = new
 	. += boxes
 	// todo: clientless support is awful here
-	var/list/decoded_view = decode_view_size(user.client?.view || world.view)
+	var/list/decoded_view = getviewsize(user.client?.view || world.view)
 	var/view_x = decoded_view[1]
 	// clamp to max items if needed
 	var/rendering_width = STORAGE_UI_TILES_FOR_SCREEN_VIEW_X(view_x)
@@ -258,7 +258,7 @@
 	// todo: clientless support is awful here
 
 	// resolve view
-	var/list/decoded_view = decode_view_size(user.client?.view || world.view)
+	var/list/decoded_view = getviewsize(user.client?.view || world.view)
 	var/view_x = decoded_view[1]
 	// setup initial width limits
 	var/rendering_width_limit = STORAGE_UI_TILES_FOR_SCREEN_VIEW_X(view_x)
